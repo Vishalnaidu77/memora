@@ -1,6 +1,7 @@
 import 'dotenv/config.js'
 import app from './src/app.js'
 import { connectToDb } from './src/config/dataase.js'
+import { scrape } from './demoParse.js'
 
 connectToDb()
 

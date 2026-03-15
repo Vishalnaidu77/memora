@@ -34,8 +34,10 @@ const itemSchema = new mongoose.Schema({
     },
 
     // Search & recomendations
-    embeddings: null,
-    chromaId: String,
+    chromaId: {
+        type: String,
+        sparse: true
+    },
 
     collectionId: {
         type: mongoose.Schema.Types.ObjectId,
