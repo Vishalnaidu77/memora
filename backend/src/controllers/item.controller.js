@@ -49,15 +49,15 @@ export async function updateItemsController(req, res) {
         })
     }
 
-    await itemModel.findByIdAndUpdate(isValidItemId, {
-        title: title,
-        description: description,
-        tags: tags
-    })
+    const updatedItem = await itemModel.findByIdAndUpdate(
+        itemId,
+        { title, description, tags },
+        { new: true }
+    )
 
     res.status(200).json({
         message: "Item updated",
-        item
+        updatedItem
     })
 }
 
@@ -72,7 +72,7 @@ export async function deleteItemsController(req, res) {
         })
     }
 
-    await itemModel.findOneAndDelete(itemId)
+    await itemModel.findOneAndDelete({ itemId })
 
     res.status(200).json({
         message: "Item deleted",
