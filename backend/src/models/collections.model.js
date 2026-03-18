@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const collectionSchema = new mongoose.Schema({
+    userId: {          // ← ADD THIS
+        type: String,
+        required: true
+    },
     name: {
         type: String,
         require: true

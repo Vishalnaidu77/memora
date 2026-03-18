@@ -10,7 +10,7 @@ itemRouter.post("/save", saveItemController)
 itemRouter.get("/get-item", getItemsController)
 
 // PATCH /api/item/update/:itemId
-itemRouter.get("/update/:itemId", updateItemsController)
+itemRouter.patch("/update/:itemId", updateItemsController)
 
 // DELETE /api/item/delete/:itemId
 itemRouter.delete("/delete/:itemId", deleteItemsController)

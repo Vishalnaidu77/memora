@@ -7,9 +7,9 @@ collectionRouter.post("/create", createCollectionController)
 
 collectionRouter.get("/", getCollectionController)
 
-collectionRouter.get("/:collectionId", getSingleCollectionController)
+collectionRouter.get("/:collectionid", getSingleCollectionController)
 
-collectionRouter.patch("/:collectionId", updateCollectionController)
+collectionRouter.patch("/:collectionid", updateCollectionController)
 
 collectionRouter.delete("/:collectionid", deleteCollectionController)
 

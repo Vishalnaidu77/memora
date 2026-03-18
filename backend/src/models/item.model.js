@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const itemSchema = new mongoose.Schema({
+    userId: {
+        type: String,
+        required: true
+    },
     // Source information
     url: {
         type: String,

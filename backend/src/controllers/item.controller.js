@@ -1,81 +1,83 @@
 import { itemModel } from "../models/item.model.js"
 
-export async function saveItemController(req, res){
-    const { url, title } = req.body
-    console.log(url, title);
-    
+export async function saveItemController(req, res) {
+    try {
+        const { url, title, contentType, collectionId } = req.body
+        const userId = req.userId  // auth middleware se aaya
 
-    if(!url || !title){
-        return res.status(404).json({
-            message: "Missing fields",
+        if (!url || !title) {
+            return res.status(400).json({ message: "url and title required" })
+        }
+
+        const item = await itemModel.create({
+            userId,
+            url,
+            title,
+            contentType: contentType || 'other',
+            collectionId: collectionId || null
         })
+
+        res.status(201).json({ message: "Item saved", item })
+
+    } catch (err) {
+        res.status(500).json({ message: err.message })
     }
-
-    const item = await itemModel.create({
-        url: url,
-        title: title
-    })
-
-    res.status(200).json({
-        message: "Item saved successfully",
-        item
-    })
 }
 
-export async function getItemsController(req, res){
-    const items = await itemModel.find()
+export async function getItemsController(req, res) {
+    try {
+        const userId = req.userId  // sirf is user ke items
 
-    if(!items){
-        return res.status(404).json({
-            message: "Items not found"
-        })
+        const items = await itemModel.find({ userId }).sort({ createdAt: -1 })
+
+        res.status(200).json({ message: "Items fetched", items })
+
+    } catch (err) {
+        res.status(500).json({ message: err.message })
     }
-
-    res.status(200).json({
-        message: "Items fetched successfully",
-        items
-    })
 }
 
 export async function updateItemsController(req, res) {
-    const { title, description, tags } = req.body
-    const itemId = req.params.itemId
+    try {
+        const { title, description, tags } = req.body
+        const itemId = req.params.itemId
+        const userId = req.userId
 
-    const item = await itemModel.findOne({ itemId })
+        const item = await itemModel.findOne({ _id: itemId, userId })
 
-    if(!item){
-        return res.status(400).json({
-            message: "Item not valid."
-        })
+        if (!item) {
+            return res.status(404).json({ message: "Item not found" })
+        }
+
+        const updatedItem = await itemModel.findByIdAndUpdate(
+            itemId,
+            { title, description, tags },
+            { new: true }
+        )
+
+        res.status(200).json({ message: "Item updated", updatedItem })
+
+    } catch (err) {
+        res.status(500).json({ message: err.message })
     }
-
-    const updatedItem = await itemModel.findByIdAndUpdate(
-        itemId,
-        { title, description, tags },
-        { new: true }
-    )
-
-    res.status(200).json({
-        message: "Item updated",
-        updatedItem
-    })
 }
 
 export async function deleteItemsController(req, res) {
-    const itemId = req.params.itemId
+    try {
+        const itemId = req.params.itemId
+        const userId = req.userId
 
-    const item = await itemModel.findOne({itemId})
+        const item = await itemModel.findOne({ _id: itemId, userId })
 
-    if(!item){
-        return res.status(404).json({
-            message: "Item not valid"
-        })
+        if (!item) {
+            return res.status(404).json({ message: "Item not found" })
+        }
+
+        await itemModel.findByIdAndDelete(itemId)
+
+        res.status(200).json({ message: "Item deleted" })
+
+    } catch (err) {
+        res.status(500).json({ message: err.message })
     }
-
-    await itemModel.findOneAndDelete({ itemId })
-
-    res.status(200).json({
-        message: "Item deleted",
-        item
-    })
 }
