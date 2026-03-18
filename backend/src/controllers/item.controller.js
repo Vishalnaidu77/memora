@@ -44,7 +44,7 @@ export async function updateItemsController(req, res) {
         const userId = req.userId
 
         const item = await itemModel.findOne({ _id: itemId, userId })
-
+        
         if (!item) {
             return res.status(404).json({ message: "Item not found" })
         }
