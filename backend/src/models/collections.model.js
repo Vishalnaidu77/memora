@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const collectionSchema = new mongoose.Schema({
-    userId: {          // ← ADD THIS
+    userId: {
         type: String,
         required: true
     },

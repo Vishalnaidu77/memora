@@ -67,7 +67,9 @@ export async function loginController(req, res){
         message: "User logged in successfully.",
         user: {
             name: userExist.name,
-            email: userExist.email
+            email: userExist.email,
+            id: userExist._id
+
         }
     })
 }
