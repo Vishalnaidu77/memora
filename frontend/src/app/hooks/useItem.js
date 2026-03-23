@@ -8,10 +8,10 @@ const useItem = () => {
 
     const { items, loading, setItems, setLoading } = useContext(ItemContext)
 
-    const handleSaveItem = async (url, title) =>{
+    const handleSaveItem = async (url) =>{
         setLoading(true)
         try {
-            const res = await saveItem(url, title)
+            const res = await saveItem(url)
             setItems(res.items)
         } catch(err){
             throw err

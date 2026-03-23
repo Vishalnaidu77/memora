@@ -142,7 +142,7 @@ export async function updateItemsController(req, res) {
 export async function deleteItemsController(req, res) {
     try {
         const itemId = req.params.itemId
-        const userId = new mongoose.Types.ObjectId(req.user.id)
+        const userId = new mongoose.Types.ObjectId(req.user)
 
         const item = await itemModel.findOne({ _id: itemId, userId })
 
@@ -177,7 +177,7 @@ export async function searchItemsController(req, res) {
         }
 
         const embeddings = await generateEmbedding(item)
-        console.log("Embedding length", embeddings.length);
+        console.log("Embedding length", embeddings?.length);
         
         if(!embeddings){
             return res.status(500).json({

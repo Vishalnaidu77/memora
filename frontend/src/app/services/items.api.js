@@ -4,11 +4,9 @@ const api = axios.create({
     baseURL: "http://localhost:3001/api/item"
 })
 
-export async function saveItem(url, title){
+export async function saveItem(url){
     const res = await api.post("/save", {
-        url,
-        title
+        url
     })
-
     return res.data
 }

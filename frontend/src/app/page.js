@@ -8,15 +8,14 @@ const Home = () => {
   const [ url, setUrl ] = useState("")
   const [ title, setTitle ] = useState("")
 
-  const { loading, handleSaveItem } = useItem()
+  const { items, loading, handleSaveItem } = useItem()
 
   const handleSubmit = (e) => {
     e.preventDefault()
     
     handleSaveItem(url, title)  
-
+    console.log(items);
     setUrl("")
-    setTitle("")
 
   }
 
@@ -31,14 +30,6 @@ const Home = () => {
            value={url}
            onChange={(e) => setUrl(e.target.value)}
            className="border rounded-lg py-2 px-4 hover:border-2 transition duration-300 ease"
-          />
-          <input 
-            type="text" 
-            name="title" 
-            placeholder="Enter title" 
-            value={title}
-           onChange={(e) => setTitle(e.target.value)}
-            className="border rounded-lg py-2 px-4 hover:border-2 transition duration-300 ease" 
           />
           <button
             type="submit"
