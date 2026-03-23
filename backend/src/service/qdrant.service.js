@@ -1,54 +1,76 @@
 import {QdrantClient} from '@qdrant/js-client-rest';
+import { v4 as uuidv4 } from 'uuid'
 
 const client = new QdrantClient({
     url: process.env.QDRANT_URL,
     apiKey: process.env.QDRANT_API_KEY,
 });
 
-export async function initCollection(){
-    try{
-        const collection = await client.getCollection("items");
-        if(!collection){
-            await client.createCollection("items", {
-                vectors: { 
-                    size: 384, 
-                    distance: "Cosine"
-                }
-            })
-        }
-        console.log(collection);
-        
-    } catch(err){
-        console.log(err.message);
-        throw err
+export async function initCollection() {
+    try {
+        await client.getCollection("items")
+        console.log("Collection Exists")
+    } catch (err) {
+        await client.createCollection("items", {
+            vectors: {
+                size: 768,
+                distance: "Cosine"
+            }
+        })
+        console.log("Collection created")
+    }
+
+    try {
+        await client.createPayloadIndex("items", {
+            field_name: "userId",
+            field_schema: "keyword"
+        })
+        console.log("Payload index created")
+    } catch (err) {
+        console.log("Index already exists — skipping")
     }
 }
     
-// export async function storeVector(itemId, vector, payload){
-//     const points = [];
-    
-//     points.push({
-//         id: itemId,
-//         vector: vector,
-//         payload: payload
-//     })
+export async function storeVector(itemId, vector, payload, userId){
+    try {
+        const points = {
+            id: uuidv4(),
+            vector: vector,
+            payload: {
+                ...payload,
+                mongoId: itemId.toString(),
+                userId: userId.toString()
+            },
+        }
 
-//     await client.upsert("items", { points })
-// }
+        // Qdrant expects points as an array
+        await client.upsert("items", { points: [points] })
+        return points.id
 
-// export async function searchSimilar(vector, userId, limit = 5){
-//     try{
-//         const result = await client.query("items", {
-//             query: {
-//                 text: vector.text,
-//                 model: "sentence-tranformers/all-MiniLM-L6-v2"
-//             },
-//             with_payload: true,
-//             limit: 5
-//         })
+    } catch (err) {
+        console.log("Qdrant store failed:", err.message);
+        throw err
+    }
+}
 
-//         return result
-//     } catch(err){
-//         throw err
-//     }
-// }
+export async function searchSimilar(vector, userId, limit = 5){
+    try{
+        const result = await client.search("items", {
+            vector: vector,
+            filter: {
+                must: [{
+                    key: "userId",
+                    match: { value: userId.toString()}
+                }]
+            },
+            limit: limit,
+            with_payload: true,
+            score_threshold: 0.5
+        })
+
+        return result.map(r => r.payload.mongoId)
+    } catch(err){
+        console.log("Qdrant search failed:", err.message);
+        return []
+    }
+}

@@ -1,5 +1,5 @@
 import express from 'express'
-import { deleteItemsController, getItemsController, saveItemController, updateItemsController } from '../controllers/item.controller.js'
+import { deleteItemsController, getItemsController, saveItemController, searchItemsController, updateItemsController } from '../controllers/item.controller.js'
 import { identifyUser } from '../middleware/auth.middleware.js'
 
 const itemRouter = express.Router()
@@ -15,4 +15,7 @@ itemRouter.patch("/update/:itemId", updateItemsController)
 
 // DELETE /api/item/delete/:itemId
 itemRouter.delete("/delete/:itemId", deleteItemsController)
+
+// Search /api/item/search
+itemRouter.get("/search", identifyUser, searchItemsController)
 export default itemRouter;
