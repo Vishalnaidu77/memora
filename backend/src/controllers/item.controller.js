@@ -7,10 +7,7 @@ import { searchSimilar, storeVector } from "../service/qdrant.service.js";
 export async function saveItemController(req, res) {
     try {
         const { url, title, contentType, collectionId } = req.body
-        const id = req.user.id  
-
-        console.log(id);
-        
+        const id = req.user.id 
 
         if (!url) {
             return res.status(400).json({ message: "url and title required" })
@@ -53,7 +50,6 @@ export async function saveItemController(req, res) {
  
 }
 
-
 async function processWithAi(itemId, userId, title, description) {
     try {
         const text = `${title}. ${description}`
@@ -68,9 +64,7 @@ async function processWithAi(itemId, userId, title, description) {
         if (!Array.isArray(tags) || tags.length === 0) {
             console.error('Tags validation failed, got:', tagsRaw)
             tags = [];
-        }
-        console.log('Tags generated:', tags)
-        console.log('Saving to itemId:', itemId)
+            }
 
         let qdrantId = null
         if(embeddings){
@@ -98,8 +92,6 @@ async function processWithAi(itemId, userId, title, description) {
             },
             { new: true }
         )        
-
-        console.log(`AI processed Item ${itemId} - tags:`, tags)
 
     } catch (err) {
         console.error(`AI processing failed:`, err.message)
@@ -209,5 +201,46 @@ export async function searchItemsController(req, res) {
     } catch (err) {
         console.error("Search failed:", err.message)
         res.status(500).json({ message: "Search failed" })
+    }
+}
+
+export async function relatedItemsController(req, res) {
+    try {
+        const itemId = req.params.itemId
+        const userId = req.user.id
+        console.log("Userid", userId);
+        
+        const item = await itemModel.findOne({ _id: itemId })
+
+        if (!item) {
+            return res.status(404).json({
+                message: "Item not found"
+            })
+        }
+        console.log("item", item);
+
+        const text = `${item.title}. ${item.description}`
+        const embeddings = await generateEmbedding(text)
+
+        const mongoIds = await searchSimilar(embeddings, userId)
+        const filteredIds = mongoIds.filter(id => id !== itemId)
+        console.log("mongo ID", mongoIds);
+        
+        console.log("Filter",filteredIds);
+
+        const relatedItems = await itemModel.find({
+            _id: { $in: filteredIds}
+        })
+        console.log("Related",relatedItems);
+
+        res.status(200).json({
+            message: "Related items fetched successfully",
+            relatedItems
+        })
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        })
     }
 }

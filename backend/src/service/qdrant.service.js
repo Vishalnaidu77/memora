@@ -60,7 +60,7 @@ export async function searchSimilar(vector, userId, limit = 5){
             filter: {
                 must: [{
                     key: "userId",
-                    match: { value: userId.toString()}
+                    match: { value: userId.toString() }
                 }]
             },
             limit: limit,

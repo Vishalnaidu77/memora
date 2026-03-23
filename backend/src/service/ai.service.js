@@ -30,9 +30,7 @@ export async function generateTags(title, description) {
             tags = JSON.parse(cleanText)
         } catch (parseErr) {
             console.error('Failed to parse tags JSON:', cleanText, parseErr.message)
-            // fallback below
         }
-        console.log('Raw Gemini response:', cleanText)
         // Ensure tags is an array of strings
         if (Array.isArray(tags) && tags.every(t => typeof t === 'string')) {
             return tags;
