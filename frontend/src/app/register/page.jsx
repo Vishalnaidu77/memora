@@ -2,6 +2,7 @@
 
 import { useTheme } from "../ThemeContext";
 import TextInput from "../components/TextInput";
+import Button from "../components/Button";
 import { useState } from "react";
 import Link from "next/link";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
@@ -155,20 +156,14 @@ export default function MemoraSignUp() {
 
               {/* Submit */}
               <div className="pt-4">
-                <button
+                <Button
+                  theme={theme}
+                  variant="auth"
                   type="submit"
-                  className="w-full py-4 text-sm font-bold uppercase tracking-wide transition-all"
-                  style={{
-                    backgroundColor: theme.foreground,
-                    color: theme.background,
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                  onMouseLeave={(e) => e.target.style.opacity = '1'}
+                  className="w-full"
                 >
                   Create Archive
-                </button>
+                </Button>
               </div>
             </form>
 

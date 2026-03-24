@@ -5,11 +5,13 @@ import { useTheme } from "../ThemeContext";
 import DashboardHero from "./components/DashboardHero";
 import ItemCard from "./components/ItemCard";
 import useItem from "../hooks/useItem";
+import FormContainer from "./components/FormContainer";
 
 export default function DashboardPage() {
   const { theme } = useTheme();
   const { allItems, handleGetItems, loading } = useItem();
   const [filter, setFilter] = useState("ALL OBJECTS");
+  const [ addItemToggle, setAddItemToggle ] = useState(false)
 
   useEffect(() => {
     handleGetItems();
@@ -37,8 +39,10 @@ export default function DashboardPage() {
           setFilter={setFilter}
           featuredItem={featuredItem}
           synthesisCount={synthesisCount}
+          setAddItemToggle={setAddItemToggle}
         />
 
+        {addItemToggle && <FormContainer setAddItemToggle={setAddItemToggle}/>}
         <div className="mt-20">
           {loading ? (
             <div className="py-24 text-[11px] tracking-[0.35em]" style={{ color: theme.muted }}>LOADING LIBRARY...</div>

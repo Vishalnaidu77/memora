@@ -2,6 +2,7 @@
 
 import { useTheme } from "../ThemeContext";
 import TextInput from "../components/TextInput";
+import Button from "../components/Button";
 import useAuth from "../hooks/useAuth";
 import { useState } from "react";
 import Link from "next/link";
@@ -155,23 +156,16 @@ export default function MemoraSignIn() {
 
               {/* Submit */}
               <div className="pt-6">
-                <button
+                <Button
+                  theme={theme}
+                  variant="auth"
                   type="submit"
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="w-full py-4 text-sm font-bold uppercase tracking-wide transition-all"
-                  style={{
-                    backgroundColor: theme.foreground,
-                    color: theme.background,
-                    border: 'none',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? '0.7' : '1'
-                  }}
-                  onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                  onMouseLeave={(e) => e.target.style.opacity = '1'}
+                  className="w-full"
                 >
                   {loading ? "Initializing..." : "Initialize Session"}
-                </button>
+                </Button>
               </div>
             </form>
 

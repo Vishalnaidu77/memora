@@ -1,3 +1,4 @@
+import Button from "../../components/Button";
 import { useTheme } from "../../ThemeContext";
 import { FILTERS } from "../constants";
 import { getDisplayTitle } from "../utils";
@@ -7,15 +8,23 @@ export default function DashboardHero({
   setFilter,
   featuredItem,
   synthesisCount,
+  setAddItemToggle
 }) {
+
   const { theme } = useTheme();
 
   return (
-    <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+    <div>
       <div>
-        <h1 className="text-[clamp(4rem,9vw,6.8rem)] font-black leading-[0.9] tracking-[-0.08em]">
-          LIBRARY
-        </h1>
+        <div className="top-section flex justify-between items-center pr-8">
+          <h1 className="text-[clamp(4rem,9vw,6.8rem)] font-black leading-[0.9] tracking-[-0.08em]">
+            LIBRARY
+          </h1>
+
+          <Button theme={theme} variant="auth" className="px-8 py-4 text-[11px] tracking-[0.24em]" onClick={() => setAddItemToggle(true)}>
+            Add Items
+          </Button>
+        </div>
 
         <div className="mt-10 flex flex-wrap gap-4">
           {FILTERS.map((tab) => {
