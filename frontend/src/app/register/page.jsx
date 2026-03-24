@@ -2,21 +2,19 @@
 
 import { useTheme } from "../ThemeContext";
 import TextInput from "../components/TextInput";
-import Button from "../components/Button";
 import { useState } from "react";
 import Link from "next/link";
-import Navbar from "../components/Navbar";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import useAuth from "../hooks/useAuth";
 
 
 export default function MemoraSignUp() {
-  const { theme, mode, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { user, loading, setLoading, handleRegister, error} = useAuth()
+  const { user, setLoading, handleRegister } = useAuth()
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -34,10 +32,9 @@ export default function MemoraSignUp() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-[calc(100vh-81px)] flex flex-col"
       style={{ backgroundColor: theme.background, color: theme.foreground, fontFamily: "'Inter', sans-serif" }}
     >
-    <Navbar />
       <main className="grow flex flex-col md:flex-row min-h-[calc(100vh-80px)]">
         {/* Left Column: Hero Section */}
         <section className="relative w-full md:w-[60%] overflow-hidden flex items-center justify-center" style={{ minHeight: "calc(100vh - 80px)", backgroundColor: '#000000' }}>

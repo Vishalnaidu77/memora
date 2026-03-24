@@ -30,7 +30,7 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "src/app/components/Icon.jsx"  ],
   "exclude": [
     "node_modules"
   ]

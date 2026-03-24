@@ -21,3 +21,8 @@ export async function registerUser(name, email, password) {
     })
     return res.data
 }
+
+export async function getCurrentUser() {
+    const res = await api.get("/get-me")
+    return res.data
+}

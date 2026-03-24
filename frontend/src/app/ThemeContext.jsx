@@ -9,12 +9,21 @@ export function ThemeProvider({ children }) {
   const [mode, setMode] = useState('dark');
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined' && localStorage.getItem('themeMode');
-    if (saved && (saved === 'dark' || saved === 'light')) setMode(saved);
+    const saved = localStorage.getItem('themeMode');
+
+    if (saved === 'light' || saved === 'dark') {
+      const frame = window.requestAnimationFrame(() => {
+        setMode(saved);
+      });
+
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    document.documentElement.dataset.theme = 'dark';
   }, []);
 
   useEffect(() => {
-    document.body.dataset.theme = mode;
+    document.documentElement.dataset.theme = mode;
     localStorage.setItem('themeMode', mode);
   }, [mode]);
 

@@ -2,22 +2,20 @@
 
 import { useTheme } from "../ThemeContext";
 import TextInput from "../components/TextInput";
-import Button from "../components/Button";
 import useAuth from "../hooks/useAuth";
 import { useState } from "react";
 import Link from "next/link";
-import Navbar from "../components/Navbar";
 import { useRouter } from "next/navigation";
 
 
 export default function MemoraSignIn() {
-  const { theme, mode, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMode, setRememberMode] = useState(false);
 
-  const { loading, error, handleLogin } = useAuth()
+  const { user, loading, handleLogin, handleGetMe } = useAuth()
 
   const router = useRouter()
 
@@ -26,22 +24,20 @@ export default function MemoraSignIn() {
     
     handleLogin(email, password)
     router.push("/dashboard")
-
+        
     setEmail("")
     setPassword("")
   };
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-[calc(100vh-81px)] flex flex-col"
       style={{
         backgroundColor: theme.background,
         color: theme.foreground,
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Header */} 
-      <Navbar />
       <main className="grow flex flex-col md:flex-row">
         {/* Left Column: Hero Section */}
         <section
@@ -162,17 +158,19 @@ export default function MemoraSignIn() {
                 <button
                   type="submit"
                   onClick={handleSubmit}
+                  disabled={loading}
                   className="w-full py-4 text-sm font-bold uppercase tracking-wide transition-all"
                   style={{
                     backgroundColor: theme.foreground,
                     color: theme.background,
                     border: 'none',
-                    cursor: 'loading' ? 'not-allowed' : 'pointer'
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? '0.7' : '1'
                   }}
                   onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                   onMouseLeave={(e) => e.target.style.opacity = '1'}
                 >
-                  Initialize Session
+                  {loading ? "Initializing..." : "Initialize Session"}
                 </button>
               </div>
             </form>
@@ -184,7 +182,7 @@ export default function MemoraSignIn() {
 
             <div className="mt-8 text-center" style={{ fontFamily: "'Manrope', sans-serif"}}>
                 <p className="text-sm" style={{ color: theme.muted }}>
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link
                     href="/register"
                     className="font-bold ml-1 transition-colors"

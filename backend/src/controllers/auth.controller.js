@@ -44,7 +44,7 @@ export async function registerController(req, res){
 export async function loginController(req, res){
     const { email, password } = req.body
 
-    const userExist = await userModel.findOne({ email })
+    const userExist = await userModel.findOne({ email }).select("+password")
 
     if(!userExist){
         return res.status(404).json({
@@ -80,4 +80,22 @@ export async function loginController(req, res){
 
         }
     })
+}
+
+export async function getMeController(req, res) {
+    const userId = req.user.id
+
+    const user = await userModel.findOne({ _id: userId })
+
+    if(!user){
+        return res.status(401).json({
+            message: "Invalid credentials"
+        })
+    }
+
+    res.status(200).json({
+        message: "User fetch",
+        user
+    })
+    
 }
