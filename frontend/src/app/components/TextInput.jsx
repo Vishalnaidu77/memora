@@ -1,6 +1,6 @@
 'use client'
 
-export default function TextInput({ id, label, type = "text", placeholder, value, onChange, theme }) {
+export default function TextInput({ id, label, type = "text", placeholder, value, onChange, theme, ...props }) {
   return (
     <div className="space-y-2">
       <label
@@ -31,6 +31,7 @@ export default function TextInput({ id, label, type = "text", placeholder, value
           e.target.style.border = "1px solid " + theme.lowBorder;
           e.target.style.boxShadow = "none";
         }}
+        {...props}
       />
     </div>
   );

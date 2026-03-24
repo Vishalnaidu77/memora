@@ -8,13 +8,13 @@ const useItem = () => {
 
     const { items, loading, setItems, setLoading, allItems, setAllItems } = useContext(ItemContext)
 
-    const handleSaveItem = async (url) =>{
+    const handleSaveItem = async (url, file) =>{
         setLoading(true)
 
         try {
-            const res = await saveItem(url)
-            setItems(res.items)
-            setLoading(false)
+            const res = await saveItem(url, file)
+            setItems(res.item ?? null)
+            return res.item
         } catch(err){
             throw err
         } finally {
@@ -42,6 +42,7 @@ const useItem = () => {
         loading,
         setItems,
         setLoading,
+        setAllItems,
         handleSaveItem,
         handleGetItems,
         allItems

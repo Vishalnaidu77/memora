@@ -1,4 +1,3 @@
-import fs from 'fs'
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
@@ -9,13 +8,14 @@ export const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY
 )
 
-export async function uploadFile(bucketname, objectName, filePath){
+export async function uploadFile(bucketname, objectName, fileBuffer, mimeType){
     try {
-        const fileContent = fs.readFileSync(filePath)
-
         const { data, error } = await supabase.storage
         .from(bucketname)
-        .upload(objectName, fileContent)
+        .upload(objectName, fileBuffer, {
+            contentType: mimeType,
+            upsert: false
+        })
 
         if(error){
             throw error
@@ -35,14 +35,16 @@ export async function uploadFile(bucketname, objectName, filePath){
 }
 
 export async function downloadFile(bucketname, objectName, filePath) {
-    
     try {
         const { data, error } = await supabase.storage
         .from(bucketname)
         .download(objectName)
 
-        fs.writeFileSync(downloadPath, Buffer.from(await data.arrayBuffer()))
-        console.log("Download file successfully", downloadPath);
+        if (error) {
+            throw error
+        }
+
+        return Buffer.from(await data.arrayBuffer())
     } catch (error) {
         console.log("Download failed", error.message);
         throw error

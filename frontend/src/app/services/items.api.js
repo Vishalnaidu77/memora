@@ -5,10 +5,20 @@ const api = axios.create({
     withCredentials: true
 })
 
-export async function saveItem(url){
-    const res = await api.post("/save", {
-        url
-    })
+export async function saveItem(url, file){
+
+    const formData = new FormData()
+    if (url) {
+        formData.append("url", url)
+    }
+
+    if (file) {
+        formData.append("file", file)
+        formData.append("contentType", file.type || "file")
+        formData.append("title", file.name || "Uploaded file")
+    }
+
+    const res = await api.post("/save", formData)
     return res.data
 }
 

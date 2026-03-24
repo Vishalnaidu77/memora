@@ -3,37 +3,62 @@ import { itemModel } from "../models/item.model.js"
 import { fetchMatadata } from "../service/metadata.service.js";
 import { generateEmbedding, generateTags } from "../service/ai.service.js";
 import { searchSimilar, storeVector } from "../service/qdrant.service.js";
+import { uploadFile } from "../service/supabse.service.js";
+import { randomUUID } from "crypto";
 
 export async function saveItemController(req, res) {
     try {
         const { url, title, contentType, collectionId } = req.body
         const id = req.user.id 
+        const uploadedFile = req.file
 
-        if (!url) {
-            return res.status(400).json({ message: "url and title required" })
+        if (!url && !uploadedFile) {
+            return res.status(400).json({ message: "A url or file is required" })
         }
 
         let meta = {}
 
-        try {
-            meta = await fetchMatadata(url)
-        } catch (err) {
-            console.error('Failed to fetch metadata:', err.message);
+        if (url) {
+            try {
+                meta = await fetchMatadata(url)
+            } catch (err) {
+                console.error('Failed to fetch metadata:', err.message);
+            }
         }
 
-        const finalTitle = title || meta.title || url
-        const finalDescription = meta.description || ''
+        let fileData = null
+        if (uploadedFile) {
+            const objectName = `${id}/${randomUUID()}-${uploadedFile.originalname}`
+            const fileUrl = await uploadFile(
+                "memoraDb",
+                objectName,
+                uploadedFile.buffer,
+                uploadedFile.mimetype
+            )
 
+            fileData = {
+                storagePath: objectName,
+                fileUrl,
+                mimeType: uploadedFile.mimetype,
+                fileSize: uploadedFile.size,
+                originalFileName: uploadedFile.originalname
+            }
+        }
+
+        const finalTitle = title || meta.title || uploadedFile?.originalname || url
+        const finalDescription = meta.description || ''
+        const resolvedContentType = contentType || resolveContentType(uploadedFile?.mimetype)
 
         const item = await itemModel.create({
             userId: new mongoose.Types.ObjectId(id),
-            url,
+            url: url || null,
             title: finalTitle,
             description:finalDescription,
-            image: meta.image || '',
+            image: meta.image || fileData?.fileUrl || '',
             siteName: meta.siteName || '',
-            contentType: contentType || 'other',
-            collectionId: collectionId || null
+            contentType: resolvedContentType,
+            collectionId: collectionId || null,
+            file: fileData
         })
 
         await processWithAi(item._id, id, finalTitle, finalDescription)
@@ -48,6 +73,14 @@ export async function saveItemController(req, res) {
         })
     }
  
+}
+
+function resolveContentType(mimeType) {
+    if (!mimeType) return 'other'
+    if (mimeType === 'application/pdf') return 'pdf'
+    if (mimeType.startsWith('image/')) return 'image'
+    if (mimeType.startsWith('video/')) return 'video'
+    return 'file'
 }
 
 async function processWithAi(itemId, userId, title, description) {

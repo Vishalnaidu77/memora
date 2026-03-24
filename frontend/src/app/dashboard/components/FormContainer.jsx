@@ -18,10 +18,11 @@ const FormContainer = ({ setAddItemToggle }) => {
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        handleSaveItem(url);
+        await handleSaveItem(url, file);
+        await handleGetItems()
         setUrl("")
-
-        handleGetItems()
+        setFile(null)
+        setAddItemToggle(false)
     }
 
   return (
@@ -76,13 +77,14 @@ const FormContainer = ({ setAddItemToggle }) => {
                     id="file"
                     label="PDF / Image"
                     type="file"
-                    placeholder="Enter url"
-                    theme={theme}  
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    theme={theme}
+                    accept=".pdf,image/*"
                 />
                 <TextInput
-                    id="email"
+                    id="url"
                     label="URL"
-                    type="email"
+                    type="url"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     placeholder="Enter url"
