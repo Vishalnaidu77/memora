@@ -1,189 +1,321 @@
 'use client'
 
-import { useEffect } from "react";
-import Icon from "../components/Icon";
+import { useEffect, useMemo, useState } from "react";
 import useItem from "../hooks/useItem";
 
-const WAVEFORM_HEIGHTS = [16, 24, 12, 20, 8, 24, 16, 8, 20, 12, 24, 16, 8];
+const FILTERS = [
+  { label: "ALL OBJECTS", value: "ALL OBJECTS" },
+  { label: "ARTICLES", value: "article" },
+  { label: "VIDEOS", value: "video" },
+  { label: "TWITTER THREADS", value: "twitter" },
+  { label: "PDFS", value: "pdf" },
+];
 
-const metadata = {
-  title: "MEMORA | The Architecture of Cognitive Resonance",
-};
+const TOP_NAV = ["LIBRARY", "RESURFACE", "INSIGHTS"];
+const SIDE_NAV = [
+  { icon: "smart_display", label: "LIBRARY", active: true },
+  { icon: "autorenew", label: "RESURFACE" },
+  { icon: "analytics", label: "INSIGHTS" },
+];
+const FOOTER_NAV = [
+  { icon: "settings", label: "SETTINGS" },
+  { icon: "inventory_2", label: "ARCHIVE" },
+];
 
-export default function DashboardPage() {
-    
-    const { allItems, handleGetItems, loading, setLoading } = useItem()
+const FALLBACK_BACKGROUNDS = [
+  "linear-gradient(180deg, #171717 0%, #090909 100%)",
+  "radial-gradient(circle at 50% 35%, rgba(255,255,255,0.24), transparent 28%), linear-gradient(180deg, #181818 0%, #050505 100%)",
+  "linear-gradient(145deg, #2a2a2a 0%, #151515 35%, #050505 100%)",
+  "radial-gradient(circle at 40% 45%, rgba(255,255,255,0.16), transparent 18%), linear-gradient(180deg, #202020 0%, #0a0a0a 100%)",
+];
 
-    useEffect(() => {
-        handleGetItems()
-        console.log(allItems);
-    }, [] )
-    
-    return (
-    <main className="flex-1 bg-black text-white overflow-x-hidden">
-      {/* Top Metadata Bar */}
-      <div className="px-6 md:px-12 pt-6 md:pt-8 pb-8">
-        <div className="flex items-center gap-4">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
-            Neural Archives #1 9.4.2
-          </span>
-        </div>
+function getBadge(type) {
+  const badges = {
+    article: "ARTICLE",
+    video: "VIDEO",
+    twitter: "THREAD",
+    pdf: "PDF",
+  };
+
+  return badges[type] || "ITEM";
+}
+
+function getMeta(item) {
+  const createdAt = item?.createdAt ? new Date(item.createdAt) : null;
+  const timeLabel =
+    createdAt && !Number.isNaN(createdAt.getTime())
+      ? `SAVED ${createdAt.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }).toUpperCase()}`
+      : "SAVED RECENTLY";
+
+  const detail =
+    item?.duration ||
+    item?.readTime ||
+    item?.pages ||
+    item?.author ||
+    (item?.type === "pdf"
+      ? "PDF"
+      : item?.type === "video"
+        ? "VIDEO"
+        : item?.type === "twitter"
+          ? "THREAD"
+          : "ARTICLE");
+
+  return `${timeLabel} - ${String(detail).toUpperCase()}`;
+}
+
+function getDisplayTitle(title, maxLength = 58) {
+  if (!title) return "Untitled item";
+  if (title.length <= maxLength) return title;
+  return `${title.slice(0, maxLength).trim()}...`;
+}
+
+function DashboardIcon({ name, className = "" }) {
+  const icons = {
+    smart_display: ">",
+    autorenew: "*",
+    analytics: "#",
+    settings: "S",
+    inventory_2: "A",
+    account_circle: "U",
+  };
+
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-flex h-5 w-5 items-center justify-center text-[0.8rem] font-bold leading-none ${className}`}
+    >
+      {icons[name] || "+"}
+    </span>
+  );
+}
+
+function PlaceholderArtwork({ index, badge }) {
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden"
+      style={{ background: FALLBACK_BACKGROUNDS[index % FALLBACK_BACKGROUNDS.length] }}
+    >
+      <div className="absolute inset-0 opacity-40">
+        <div className="absolute left-[-10%] top-[14%] h-px w-[130%] rotate-[12deg] bg-white/15" />
+        <div className="absolute left-[-10%] top-[40%] h-px w-[130%] rotate-[12deg] bg-white/10" />
+        <div className="absolute left-[-10%] top-[66%] h-px w-[130%] rotate-[12deg] bg-white/10" />
+      </div>
+      <div className="absolute left-5 top-5 bg-black px-4 py-2 text-[10px] font-semibold tracking-[0.24em] text-white">
+        {badge}
+      </div>
+    </div>
+  );
+}
+
+function ItemCard({ item, index }) {
+  const badge = getBadge(item?.type);
+
+  return (
+    <article className="group">
+      <div className="relative mb-6 aspect-[0.76] overflow-hidden bg-[#111]">
+        {item?.thumbnail ? (
+          <img
+            src={item.thumbnail}
+            alt={item?.title || "Library item"}
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <PlaceholderArtwork index={index} badge={badge} />
+        )}
+
+        {item?.thumbnail ? (
+          <div className="absolute left-5 top-5 bg-black px-4 py-2 text-[10px] font-semibold tracking-[0.24em] text-white">
+            {badge}
+          </div>
+        ) : null}
       </div>
 
-      {/* Hero Section */}
-      <section className="px-6 md:px-12 mb-16">
-        {/* Main Heading - Split across lines */}
-        <h1 className="font-black uppercase leading-[0.9] mb-8" style={{ fontSize: "clamp(3rem, 12vw, 6rem)" }}>
-          The<br />
-          Architecture<br />
-          Of<br />
-          Cognitive<br />
-          Resonance
-        </h1>
+      <h3 className="max-w-[13ch] text-[clamp(1.65rem,2vw,2.1rem)] font-black leading-[1.06] tracking-[-0.05em] text-white">
+        {getDisplayTitle(item?.title, 54)}
+      </h3>
 
-        {/* Artifact Info */}
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gray-600 flex items-center justify-center text-xs font-bold">
-              ET
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase">Artifact</p>
-              <p className="text-[10px] text-gray-400">Elias Thomas</p>
-            </div>
-          </div>
-          <span className="text-[10px] text-gray-500">Read Time: 15 Minutes</span>
-        </div>
-      </section>
+      <p className="mt-4 text-[11px] tracking-[0.24em] text-[#8d8d8d]">{getMeta(item)}</p>
+    </article>
+  );
+}
 
-      {/* Featured Waveform Area */}
-      <section className="px-6 md:px-12 mb-16">
-        <div className="w-full bg-gray-900 p-12 flex items-center justify-center min-h-64 rounded">
-          <svg viewBox="0 0 1000 200" className="w-full h-full">
-            <defs>
-              <linearGradient id="waveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style={{ stopColor: "#888", stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: "#444", stopOpacity: 1 }} />
-              </linearGradient>
-            </defs>
-            <path
-              d="M 0 100 Q 62.5 50, 125 100 T 250 100 T 375 100 T 500 100 T 625 100 T 750 100 T 875 100 T 1000 100"
-              fill="none"
-              stroke="url(#waveGradient)"
-              strokeWidth="3"
-            />
-          </svg>
-        </div>
-      </section>
+export default function DashboardPage() {
+  const { allItems, handleGetItems, loading } = useItem();
+  const [filter, setFilter] = useState("ALL OBJECTS");
 
-      {/* Quote and Classifications */}
-      <section className="px-6 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-        {/* Quote - Left Column */}
-        <div className="md:col-span-1 border-l-4 border-gray-600 pl-6">
-          <p className="text-sm italic text-gray-300 leading-relaxed">
-            "The modern monolith does not just store data; it organizes the void between thoughts. In this exploration, we dissect how neural associations form the bedrock of emergent memory systems."
-          </p>
-        </div>
+  useEffect(() => {
+    handleGetItems();
+  }, []);
 
-        {/* Classifications - Right Columns */}
-        <div className="md:col-span-3 space-y-8">
-          {/* Epistemology */}
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-4">
-              Epistemology
-            </span>
-            <div className="flex flex-wrap gap-3">
-              {["Structuralism", "Neural Design", "Archival Theory", "Neuronal Text"].map((tag) => (
-                <span key={tag} className="bg-gray-900 text-[10px] font-bold uppercase px-3 py-2 border border-gray-700">
-                  {tag}
-                </span>
+  const items = useMemo(() => allItems.flat().filter(Boolean), [allItems]);
+
+  const filteredItems = useMemo(() => {
+    if (filter === "ALL OBJECTS") return items;
+    return items.filter((item) => item?.type === filter);
+  }, [filter, items]);
+
+  const featuredItem = filteredItems[0];
+  const synthesisCount = filteredItems.length;
+
+  return (
+    <main className="min-h-screen bg-[#0b0b0b] text-white">
+      <header className="border-b border-white/10 px-8 py-5">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-6">
+          <div className="flex items-center gap-12">
+            <div className="text-[2.2rem] font-black tracking-[-0.08em]">MEMORA</div>
+            <nav className="hidden items-center gap-10 md:flex">
+              {TOP_NAV.map((item) => (
+                <button
+                  key={item}
+                  className={`border-b pb-2 text-[0.95rem] font-bold tracking-[-0.03em] ${
+                    item === "LIBRARY" ? "border-white text-white" : "border-transparent text-white/80"
+                  }`}
+                >
+                  {item}
+                </button>
               ))}
-            </div>
+            </nav>
           </div>
 
-          {/* Neural Associations */}
+          <div className="flex items-center gap-5 text-white">
+            <button
+              aria-label="Settings"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 hover:border-white/30"
+            >
+              <DashboardIcon name="settings" />
+            </button>
+            <button
+              aria-label="Account"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 hover:border-white/30"
+            >
+              <DashboardIcon name="account_circle" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-12 px-6 py-8 md:px-8 xl:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="flex min-h-[calc(100vh-8rem)] flex-col border-white/10 xl:border-r xl:pr-10">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 block mb-4">
-              Neural Associations
-            </span>
-            <div className="space-y-3">
-              <div className="flex gap-4">
-                <span className="text-gray-600 font-bold text-xs">#1</span>
-                <div>
-                  <p className="text-xs font-bold">The Ritualized Grid and the Ethics of Order</p>
-                  <p className="text-[10px] text-gray-500 mt-1">Related Concept: Foundational</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <span className="text-gray-600 font-bold text-xs">#2</span>
-                <div>
-                  <p className="text-xs font-bold">Channels vs Access: Hiding in Digital Spaces</p>
-                  <p className="text-[10px] text-gray-500 mt-1">Related Concept: Layered</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <span className="text-gray-600 font-bold text-xs">#3</span>
-                <div>
-                  <p className="text-xs font-bold">Resonance Memory Patterns in AI Models</p>
-                  <p className="text-[10px] text-gray-500 mt-1">Related Concept: Emergent</p>
-                </div>
+            <div className="text-[3rem] font-black leading-none tracking-[-0.08em]">MEMORA</div>
+            <p className="mt-3 text-[11px] tracking-[0.38em] text-white/70">MODERN MONOLITH</p>
+          </div>
+
+          <nav className="mt-14 space-y-3">
+            {SIDE_NAV.map((item) => (
+              <button
+                key={item.label}
+                className={`flex w-full items-center gap-4 overflow-hidden px-5 py-5 text-left text-[1.05rem] tracking-[0.16em] ${
+                  item.active
+                    ? "bg-white text-black"
+                    : "border border-white/10 text-white/75 hover:border-white/30"
+                }`}
+              >
+                <DashboardIcon name={item.icon} className="shrink-0" />
+                <span className="truncate font-semibold">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <div className="mt-auto space-y-3 pt-12">
+            {FOOTER_NAV.map((item) => (
+              <button
+                key={item.label}
+                className="flex items-center gap-4 px-1 py-3 text-left text-[0.98rem] tracking-[0.18em] text-white/72"
+              >
+                <DashboardIcon name={item.icon} className="shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <section className="pb-10">
+          <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+            <div>
+              <h1 className="text-[clamp(4rem,9vw,6.8rem)] font-black leading-[0.9] tracking-[-0.08em]">
+                LIBRARY
+              </h1>
+
+              <div className="mt-10 flex flex-wrap gap-4">
+                {FILTERS.map((tab) => {
+                  const isActive =
+                    tab.value === "ALL OBJECTS" ? filter === "ALL OBJECTS" : filter === tab.value;
+
+                  return (
+                    <button
+                      key={tab.label}
+                      onClick={() =>
+                        setFilter(tab.value === "ALL OBJECTS" ? "ALL OBJECTS" : tab.value)
+                      }
+                      className={`min-w-[140px] border px-6 py-4 text-[11px] font-semibold tracking-[0.34em] transition ${
+                        isActive
+                          ? "border-white bg-white text-black"
+                          : "border-white/10 text-white/85 hover:border-white/30"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            <aside className="min-w-0 overflow-hidden bg-[#f4f2ef] p-8 text-black sm:p-10">
+              <p className="text-[11px] tracking-[0.42em] text-black/55">SYNTHESIS ENGINE</p>
+
+              <h2 className="mt-6 max-w-[9ch] text-[clamp(2.2rem,3vw,3.35rem)] font-black leading-[1.02] tracking-[-0.06em] break-words">
+                {featuredItem
+                  ? `Cross-pollination detected around "${getDisplayTitle(featuredItem.title, 28)}".`
+                  : "Your library is ready for its first synthesis."}
+              </h2>
+
+              <p className="mt-8 max-w-[28ch] text-[1.05rem] leading-8 text-black/75">
+                {featuredItem
+                  ? `Your library suggests a convergence across ${synthesisCount} recent ${
+                      synthesisCount === 1 ? "object" : "objects"
+                    } in this collection.`
+                  : "Save articles, videos, PDFs, and threads to start building connections here."}
+              </p>
+
+              <button className="mt-12 border-b border-black pb-2 text-[11px] font-semibold tracking-[0.3em]">
+                VIEW FULL SYNTHESIS
+              </button>
+            </aside>
           </div>
-        </div>
-      </section>
 
-      {/* Main Content */}
-      <section className="px-6 md:px-12 mb-16 max-w-3xl">
-        <h2 className="text-2xl font-black uppercase tracking-tight mb-6">I. The Synaptic Interface</h2>
-        <p className="text-sm text-gray-300 leading-relaxed mb-6">
-          In the depths of the memory core, information is not stored in linear rows. Instead, it exists as a series of 
-          interconnected nodes, each vibrating with the context of its neighbors. This "Modern Monolith" approach rejects 
-          the hierarchy of the folder in favor of the fluidity of the association.
-        </p>
-        <p className="text-sm text-gray-300 leading-relaxed">
-          Consider the way a scent can trigger a decade-old memory. Our LLM replicates this through tonal layering and 
-          ambient shadows, creating a spatial environment where data feels three-dimensional. The use of pure black 
-          (#000000) creates a void where only the essential is illuminated.
-        </p>
-      </section>
+          <div className="mt-20">
+            {loading ? (
+              <div className="py-24 text-[11px] tracking-[0.35em] text-white/55">LOADING LIBRARY...</div>
+            ) : filteredItems.length ? (
+              <div className="grid gap-x-10 gap-y-20 md:grid-cols-2 2xl:grid-cols-4">
+                {filteredItems.map((item, index) => (
+                  <ItemCard
+                    key={item?._id || item?.id || `${item?.title || "item"}-${index}`}
+                    item={item}
+                    index={index}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex min-h-[320px] flex-col items-center justify-center border border-dashed border-white/10 bg-white/[0.02] text-center">
+                <p className="text-[11px] tracking-[0.42em] text-white/50">NO ITEMS FOUND</p>
+                <p className="mt-4 max-w-md text-base text-white/70">
+                  Try another filter, or add a few saved objects to populate the library.
+                </p>
+              </div>
+            )}
+          </div>
 
-      {/* Resonance Frequency Chart */}
-      <section className="px-6 md:px-12 mb-16">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">Resonance Frequency</h3>
-        <div className="w-full bg-gray-900 p-6 flex items-end justify-center gap-2 min-h-40 rounded">
-          {[35, 55, 40, 60, 50, 65, 45].map((height, i) => (
-            <div
-              key={i}
-              className="bg-gray-600 w-12 transition-all hover:bg-gray-500"
-              style={{ height: `${height}%` }}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Bottom Cards Grid */}
-      <section className="px-6 md:px-12 grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-        <div className="bg-gray-900 border border-gray-800 p-12 flex flex-col items-center justify-center min-h-56 hover:border-gray-600 transition-colors cursor-pointer rounded">
-          <Icon name="hub" className="text-4xl text-gray-600 mb-4" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-center">Node Connection</h3>
-        </div>
-
-        <div className="bg-gray-900 border border-gray-800 p-12 flex flex-col items-center justify-center min-h-56 hover:border-gray-600 transition-colors cursor-pointer rounded">
-          <Icon name="integration_instructions" className="text-4xl text-gray-600 mb-4" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-center">Core Synthesis</h3>
-        </div>
-      </section>
-
-      {/* Action Buttons */}
-      <section className="px-6 md:px-12 flex flex-col items-center gap-6 pb-32">
-        <button className="px-12 py-3 bg-white text-black text-[10px] font-black uppercase tracking-wider hover:bg-gray-200 transition-colors">
-          Download Archive
-        </button>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600">
-          Re-Index Neurons
-        </span>
-      </section>
+          <footer className="mt-24 border-t border-white/10 pt-8 text-[11px] tracking-[0.32em] text-white/30">
+            2024 MEMORA. ALL RIGHTS RESERVED.
+          </footer>
+        </section>
+      </div>
     </main>
   );
 }

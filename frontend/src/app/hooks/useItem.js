@@ -43,7 +43,8 @@ const useItem = () => {
         setItems,
         setLoading,
         handleSaveItem,
-        handleGetItems
+        handleGetItems,
+        allItems
     }
 }
 
