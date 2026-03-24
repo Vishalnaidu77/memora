@@ -16,7 +16,7 @@ export default function DashboardPage() {
   }, []);
 
 
-  const items = useMemo(() => allItems.flat().filter(Boolean), [allItems]);
+  const items = useMemo(() => allItems.filter(Boolean), [allItems]);
 
   const filteredItems = useMemo(() => {
     if (filter === "ALL OBJECTS") return items;

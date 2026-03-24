@@ -68,7 +68,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-3 md:gap-5">
           <div className="hidden items-center gap-4 md:flex">
-            {authItems.map((item) => {
+            {user ? null : authItems.map((item) => {
               const isActive = pathname === item.href;
 
               return (

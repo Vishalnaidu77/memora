@@ -27,7 +27,7 @@ const useItem = () => {
 
         try {
             const res = await getItems()
-            setAllItems(prevItem => [...prevItem, res.items])
+            setAllItems(res.items ?? [])
             setLoading(false)
         } catch (err) {
             throw err
