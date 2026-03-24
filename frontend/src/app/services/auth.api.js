@@ -12,3 +12,12 @@ export async function loginUser(email, password){
     })
     return res.data
 }
+
+export async function registerUser(name, email, password) {
+    const res = await api.post("/register",{
+        name,
+        email,
+        password
+    })
+    return res.data
+}

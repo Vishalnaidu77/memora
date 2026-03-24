@@ -7,6 +7,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import useAuth from "../hooks/useAuth";
 
 
 export default function MemoraSignUp() {
@@ -15,9 +16,20 @@ export default function MemoraSignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const { user, loading, setLoading, handleRegister, error} = useAuth()
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // handle signup
+
+    handleRegister(fullName, email, password)
+    setLoading(false)
+
+    setFullName("")
+    setEmail("")
+    setPassword("")
+
+    console.log(user);
   };
 
   return (
@@ -32,7 +44,7 @@ export default function MemoraSignUp() {
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img
-              src="https://images.unsplash.com/photo-1737505599159-5ffc1dcbc08f?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              src="Register-page.png"
               alt="Digital discovery"
               className="w-full h-full object-cover"
               style={{ filter: "grayscale(100%)" }}
@@ -55,7 +67,7 @@ export default function MemoraSignUp() {
                 border: "2px solid rgba(255,255,255,0.3)" 
                }}>
                 <DotLottieReact
-                    src="path/to/animation.lottie"
+                    src="https://lottie.host/0fac2c3a-5a4a-4eb3-bd45-475df73c4a1d/dTbEcUhmQS.lottie"
                     loop
                     autoplay
                 />
