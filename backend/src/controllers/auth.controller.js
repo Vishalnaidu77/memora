@@ -43,17 +43,15 @@ export async function loginController(req, res){
 
     if(!userExist){
         return res.status(404).json({
-            message: "User not found, register first"
+            message: "Invalid credentials"
         })
     }
-
-    console.log(userExist.password);
 
     const validPassword = await bcrypt.compare(password, userExist.password)
 
     if(!validPassword){
         return res.status(401).json({
-            message: "Incorrect password"
+            message: "Invalid credentials"
         })
     }
 

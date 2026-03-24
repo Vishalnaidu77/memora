@@ -10,3 +10,8 @@ export async function saveItem(url){
     })
     return res.data
 }
+
+export async function getItems() {
+    const res = await api.get("/get-item")
+    return res.data
+}

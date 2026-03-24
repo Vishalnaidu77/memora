@@ -3,10 +3,11 @@
 import { useTheme } from "../ThemeContext";
 import TextInput from "../components/TextInput";
 import Button from "../components/Button";
-import useAuth from "@/app/hooks/useAuth";
+import useAuth from "../hooks/useAuth";
 import { useState } from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
+import { useRouter } from "next/navigation";
 
 
 export default function MemoraSignIn() {
@@ -18,10 +19,13 @@ export default function MemoraSignIn() {
 
   const { loading, error, handleLogin } = useAuth()
 
+  const router = useRouter()
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
     handleLogin(email, password)
+    router.push("/dashboard")
 
     setEmail("")
     setPassword("")
