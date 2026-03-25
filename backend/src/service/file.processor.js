@@ -22,17 +22,16 @@ export async function extractTextFromPdf(fileUrl) {
     }
 }
 
-export async function extractTextFromImage(fileUrl) {
+export async function extractTextFromImage(fileUrl, mimeType = 'image/jpeg') {
     try {
-        const res = axios.get(fileUrl, {
+        const res = await axios.get(fileUrl, {
             responseType: 'arraybuffer'
         })
 
         const base64 = Buffer.from(res.data).toString('base64')
-        const mimeType = 'image/jpeg';
 
         const result = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-3-flash-preview',
             contents: [
                 {
                     parts: [
@@ -50,7 +49,7 @@ export async function extractTextFromImage(fileUrl) {
             ]
         })
 
-        return res.text
+        return result.text || null
 
     } catch (err) {
         console.error("Image extraction failed:", err.message);

@@ -14,7 +14,6 @@ export async function saveItem(url, file){
 
     if (file) {
         formData.append("file", file)
-        formData.append("contentType", file.type || "file")
         formData.append("title", file.name || "Uploaded file")
     }
 

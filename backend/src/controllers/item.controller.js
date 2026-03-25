@@ -52,7 +52,10 @@ export async function saveItemController(req, res) {
             if(mimeType === 'application/pdf'){
                 extractedText = await extractTextFromPdf(fileData.fileUrl)
             } else if(mimeType.startsWith('image/')){
-                extractedText = await extractTextFromImage(fileData.fileUrl)
+                extractedText = await extractTextFromImage(
+                    fileData.fileUrl,
+                    uploadedFile.mimetype
+                )
             }
             console.log(mimeType);
             
@@ -62,7 +65,9 @@ export async function saveItemController(req, res) {
 
         const finalTitle = title || meta.title || uploadedFile?.originalname || url
         const finalDescription = meta.description || ''
-        const resolvedContentType = contentType || resolveContentType(uploadedFile?.mimetype)
+        const resolvedContentType = resolveContentType(
+            contentType || uploadedFile?.mimetype
+        )
 
         const item = await itemModel.create({
             userId: new mongoose.Types.ObjectId(id),
@@ -93,6 +98,9 @@ export async function saveItemController(req, res) {
 
 function resolveContentType(mimeType) {
     if (!mimeType) return 'other'
+    if (['article', 'tweet', 'image', 'video', 'pdf', 'file', 'other'].includes(mimeType)) {
+        return mimeType
+    }
     if (mimeType === 'application/pdf') return 'pdf'
     if (mimeType.startsWith('image/')) return 'image'
     if (mimeType.startsWith('video/')) return 'video'
