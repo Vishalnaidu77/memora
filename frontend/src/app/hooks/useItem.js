@@ -2,11 +2,11 @@
 
 import { ItemContext } from "../../context/ItemContext";
 import { useContext } from "react";
-import { getItems, saveItem } from "../services/items.api";
+import { getItems, getResurfaceItems, saveItem } from "../services/items.api";
 
 const useItem = () => {
 
-    const { items, loading, setItems, setLoading, allItems, setAllItems } = useContext(ItemContext)
+    const { items, loading, setItems, setLoading, allItems, setAllItems, resurfaceItems, setResurfaceItems } = useContext(ItemContext)
 
     const handleSaveItem = async (url, file) =>{
         setLoading(true)
@@ -37,6 +37,21 @@ const useItem = () => {
 
     }
 
+    const handleResurfaceItems = async () => {
+        setLoading(true)
+
+        try {
+            const res = await getResurfaceItems()
+            setResurfaceItems(res.items ?? [])
+            return res.items ?? []
+        } catch (err) {
+            throw err
+        } finally{
+            setLoading(false)
+        }
+
+    }
+
     return {
         items,
         loading,
@@ -45,7 +60,10 @@ const useItem = () => {
         setAllItems,
         handleSaveItem,
         handleGetItems,
-        allItems
+        allItems,
+        resurfaceItems, 
+        setResurfaceItems,
+        handleResurfaceItems
     }
 }
 

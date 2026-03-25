@@ -296,22 +296,22 @@ export async function resurfaceController(req, res) {
     const items = await itemModel.find({
         userId,
         createdAt: {
-            $lte: daysAgo(7)
+            $lte: daysAgo(2)
         },
         resurfaceCount: {
             $lte: 5
         }
     }).limit(5)
 
-    await itemModel.updateMany(
-        {
-            _id: { $in: items.map(i => i._id)}
-        },
-        {
-            $inc: { resurfaceCount: 1 },
-            $set: { lastResurfaceDate: new Date() }
-        }
-    )
+    // await itemModel.updateMany(
+    //     {
+    //         _id: { $in: items.map(i => i._id)}
+    //     },
+    //     {
+    //         $inc: { resurfaceCount: 1 },
+    //         $set: { lastResurfaceDate: new Date() }
+    //     }
+    // )
     
     res.status(200).json({
         message: "Fetch resurface items",

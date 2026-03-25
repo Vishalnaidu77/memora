@@ -8,9 +8,19 @@ const ItemProvider = ({ children }) => {
     const [items, setItems] = useState(null)
     const [loading, setLoading] = useState(false)
     const [allItems, setAllItems] = useState([])
+    const [resurfaceItems, setResurfaceItems] = useState([])
 
     return(
-        <ItemContext.Provider value={{ items, loading, setItems, setLoading, allItems, setAllItems }}>
+        <ItemContext.Provider value={{ 
+            items, 
+            loading, 
+            setItems, 
+            setLoading, 
+            allItems, 
+            setAllItems, 
+            resurfaceItems, 
+            setResurfaceItems 
+        }}>
             { children }
         </ItemContext.Provider>
     )
