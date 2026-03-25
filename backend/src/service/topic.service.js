@@ -1,5 +1,6 @@
 import { itemModel } from "../models/item.model.js"
 import Clustering from "density-clustering"
+import { generateTopicLabel } from "./ai.service.js"
 import { getUserVectors } from "./qdrant.service.js"
 
 const DBSCAN_EPS = 0.28
@@ -37,7 +38,7 @@ function titleCase(value) {
         .join(' ')
 }
 
-function buildClusterLabel(points) {
+function buildFallbackClusterLabel(points) {
     const tagCounts = new Map()
 
     for (const point of points) {
@@ -115,14 +116,18 @@ export const clusterUserTopics = async (userId) => {
     }
 
     const { clusters: groupedPoints, unclusteredItemIds } = buildDbscanClusters(points)
-    const clusters = groupedPoints
-        .map((clusterPoints, index) => ({
+    const clusters = await Promise.all(groupedPoints.map(async (clusterPoints, index) => {
+        const aiLabel = await generateTopicLabel(clusterPoints)
+
+        return {
             clusterId: `topic-${index + 1}`,
-            topicLabel: buildClusterLabel(clusterPoints),
+            topicLabel: aiLabel || buildFallbackClusterLabel(clusterPoints),
             itemIds: clusterPoints.map(point => point.mongoId),
             count: clusterPoints.length,
-        }))
-        .sort((left, right) => right.count - left.count)
+        }
+    }))
+
+    clusters.sort((left, right) => right.count - left.count)
 
     await itemModel.updateMany(
         { userId },

@@ -62,3 +62,41 @@ export async function generateEmbedding(text) {
         return null
     }
 }
+
+export async function generateTopicLabel(clusterItems) {
+    let cleanText = ''
+
+    try {
+        const itemsSummary = clusterItems
+            .map((item, index) => {
+                const title = item.payload?.title || 'Untitled'
+                const tags = (item.payload?.tags || []).slice(0, 5).join(', ')
+                return `${index + 1}. Title: ${title}\nTags: ${tags || 'None'}`
+            })
+            .join('\n\n')
+
+        const prompt = `
+            These items belong to the same topic cluster:
+
+            ${itemsSummary}
+
+            Generate one short topic label for this cluster.
+            Rules:
+            - Maximum 4 words
+            - Use plain readable words
+            - Do not use quotes
+            - Return only the label text
+        `
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt
+        })
+
+        cleanText = response.text.trim().replace(/["`]/g, '')
+        return cleanText || 'General'
+    } catch (err) {
+        console.error('generateTopicLabel failed:', err.message, 'Raw:', cleanText)
+        return null
+    }
+}
