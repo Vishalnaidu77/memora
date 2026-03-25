@@ -77,6 +77,7 @@ const FormContainer = ({ setAddItemToggle }) => {
                     id="file"
                     label="PDF / Image"
                     type="file"
+                    name="file"
                     onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                     theme={theme}
                     accept=".pdf,image/*"

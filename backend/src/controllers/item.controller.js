@@ -5,6 +5,7 @@ import { generateEmbedding, generateTags } from "../service/ai.service.js";
 import { searchSimilar, storeVector } from "../service/qdrant.service.js";
 import { uploadFile } from "../service/supabse.service.js";
 import { randomUUID } from "crypto";
+import { extractTextFromImage, extractTextFromPdf } from "../service/file.processor.js";
 
 export async function saveItemController(req, res) {
     try {
@@ -45,6 +46,20 @@ export async function saveItemController(req, res) {
             }
         }
 
+        let extractedText = null;
+        if(uploadedFile){
+            const mimeType = uploadedFile.mimetype;
+            if(mimeType === 'application/pdf'){
+                extractedText = await extractTextFromPdf(fileData.fileUrl)
+            } else if(mimeType.startsWith('image/')){
+                extractedText = await extractTextFromImage(fileData.fileUrl)
+            }
+            console.log(mimeType);
+            
+            console.log("Extracted text length:", extractedText?.length);
+            
+        }
+
         const finalTitle = title || meta.title || uploadedFile?.originalname || url
         const finalDescription = meta.description || ''
         const resolvedContentType = contentType || resolveContentType(uploadedFile?.mimetype)
@@ -56,6 +71,7 @@ export async function saveItemController(req, res) {
             description:finalDescription,
             image: meta.image || fileData?.fileUrl || '',
             siteName: meta.siteName || '',
+            content: extractedText || null,
             contentType: resolvedContentType,
             collectionId: collectionId || null,
             file: fileData
