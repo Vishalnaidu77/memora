@@ -57,7 +57,9 @@ const itemSchema = new mongoose.Schema({
     resurfaceCount: {
         type: Number,
         default: 0
-    }
+    },
+    topicClusterId: String,
+    topicLabel: String
 }, { timestamps: true })
 
 export const itemModel = mongoose.model("items", itemSchema)

@@ -1,6 +1,6 @@
 import express from 'express'
 import multer from 'multer'
-import { deleteItemsController, getItemsController, relatedItemsController, resurfaceController, saveItemController, searchItemsController, updateItemsController } from '../controllers/item.controller.js'
+import { clusterTopicsController, deleteItemsController, getItemsController, relatedItemsController, resurfaceController, saveItemController, searchItemsController, updateItemsController } from '../controllers/item.controller.js'
 import { identifyUser } from '../middleware/auth.middleware.js'
 
 const itemRouter = express.Router()
@@ -26,4 +26,7 @@ itemRouter.get("/related/:itemId", identifyUser, relatedItemsController)
 
 // Resurface /api/item/resurface
 itemRouter.get("/resurface", identifyUser, resurfaceController)
+
+// Topic cluster api/item/cluster-topics
+itemRouter.post("/cluster-topics", identifyUser, clusterTopicsController)
 export default itemRouter;

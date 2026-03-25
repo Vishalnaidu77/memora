@@ -16,7 +16,7 @@ const CollectionPage = () => {
       >
         <p className="text-[11px] tracking-[0.32em]" style={{ color: theme.muted }}>COLLECTION</p>
         <h1 className="mt-6 text-5xl font-black tracking-[-0.05em]" style={{ color: theme.heading }}>
-          There is no collection yet.
+          There is no clusters yet.
         </h1>
         
       </div>

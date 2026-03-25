@@ -6,6 +6,7 @@ import { searchSimilar, storeVector } from "../service/qdrant.service.js";
 import { uploadFile } from "../service/supabse.service.js";
 import { randomUUID } from "crypto";
 import { extractTextFromImage, extractTextFromPdf } from "../service/file.processor.js";
+import { clusterUserTopics } from "../service/topic.service.js";
 
 export async function saveItemController(req, res) {
     try {
@@ -65,6 +66,7 @@ export async function saveItemController(req, res) {
 
         const finalTitle = title || meta.title || uploadedFile?.originalname || url
         const finalDescription = meta.description || ''
+        const finalContent = extractedText || meta.content || ''
         const resolvedContentType = resolveContentType(
             contentType || uploadedFile?.mimetype
         )
@@ -73,16 +75,16 @@ export async function saveItemController(req, res) {
             userId: new mongoose.Types.ObjectId(id),
             url: url || null,
             title: finalTitle,
-            description:finalDescription,
+            description: finalDescription,
             image: meta.image || fileData?.fileUrl || '',
             siteName: meta.siteName || '',
-            content: extractedText || null,
+            content: finalContent,
             contentType: resolvedContentType,
             collectionId: collectionId || null,
             file: fileData
         })
 
-        await processWithAi(item._id, id, finalTitle, finalDescription)
+        await processWithAi(item._id, id, finalTitle, finalDescription, finalContent, resolvedContentType)
 
         // Fetch the updated item with tags
         const itemWithTags = await itemModel.findById(item._id)
@@ -107,12 +109,12 @@ function resolveContentType(mimeType) {
     return 'file'
 }
 
-async function processWithAi(itemId, userId, title, description) {
+async function processWithAi(itemId, userId, title, description, content = '', contentType = 'other') {
     try {
-        const text = `${title}. ${description}`
+        const text = [title, description, content].filter(Boolean).join('. ')
 
         const [ tagsRaw, embeddings ] = await Promise.all([
-            generateTags(title, description),
+            generateTags(title, [description, content].filter(Boolean).join('. ')),
             generateEmbedding(text)
         ])
 
@@ -129,7 +131,9 @@ async function processWithAi(itemId, userId, title, description) {
                 qdrantId = await storeVector(itemId, embeddings, {
                     userId: userId.toString(),
                     title: title,
-                    tags: tags // log tags sent to Qdrant
+                    tags: tags,
+                    description,
+                    contentType,
                 }, userId)
             } catch (qErr) {
                 console.error('Qdrant store failed (payload):', {
@@ -341,4 +345,28 @@ export async function resurfaceController(req, res) {
         message: "Fetch resurface items",
         items
     })
+}
+
+export async function clusterTopicsController(req, res){
+    try {
+        const userId = req.user.id
+
+        if(!userId){
+            return res.status(401).json({
+                message: "Unauthorized user"
+            })
+        }
+
+        const cluster = await clusterUserTopics(userId)
+
+        res.status(200).json({
+            message: "Topic clusterd successfully",
+            cluster
+        })
+
+    } catch (err) {
+        res.status(400).json({
+            message: err.message
+        })
+    }
 }

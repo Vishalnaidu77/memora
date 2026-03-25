@@ -74,3 +74,40 @@ export async function searchSimilar(vector, userId, limit = 5){
         return []
     }
 }
+
+export async function getUserVectors(userId) {
+    try {
+        const result = [];
+        let nextPageOffset = null
+
+        do {
+            const res = await client.scroll("items", {
+                limit: 100,
+                filter: {
+                    must: [
+                        {
+                            key: "userId",
+                            match: {
+                                value: userId.toString()
+                            }
+                        }
+                    ]
+                },
+                with_payload: true,
+                with_vector: true,
+                offset: nextPageOffset
+            })
+
+            const points = res.points || []
+            result.push(...points)
+            nextPageOffset = res.next_page_offset
+
+        } while (nextPageOffset);
+
+        return result
+
+    } catch (err) {
+        console.error("Fetching user vectors failed:", err.message);
+        return []
+    }
+}
