@@ -9,6 +9,7 @@ const ItemProvider = ({ children }) => {
     const [loading, setLoading] = useState(false)
     const [allItems, setAllItems] = useState([])
     const [resurfaceItems, setResurfaceItems] = useState([])
+    const [clusterGroups, setClusterGroups] = useState([])
 
     return(
         <ItemContext.Provider value={{ 
@@ -19,7 +20,9 @@ const ItemProvider = ({ children }) => {
             allItems, 
             setAllItems, 
             resurfaceItems, 
-            setResurfaceItems 
+            setResurfaceItems,
+            clusterGroups,
+            setClusterGroups
         }}>
             { children }
         </ItemContext.Provider>

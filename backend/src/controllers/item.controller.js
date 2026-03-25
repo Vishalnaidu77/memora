@@ -347,6 +347,49 @@ export async function resurfaceController(req, res) {
     })
 }
 
+export async function getClustersController(req, res) {
+    try {
+        const userId = new mongoose.Types.ObjectId(req.user.id)
+        const items = await itemModel.find({
+            userId,
+            topicClusterId: { $exists: true, $ne: null }
+        }).sort({ createdAt: -1 })
+
+        const groupedMap = new Map()
+
+        for (const item of items) {
+            const clusterId = item.topicClusterId
+            const topicLabel = item.topicLabel || 'General'
+
+            if (!clusterId) continue
+
+            if (!groupedMap.has(clusterId)) {
+                groupedMap.set(clusterId, {
+                    clusterId,
+                    topicLabel,
+                    count: 0,
+                    items: []
+                })
+            }
+
+            const cluster = groupedMap.get(clusterId)
+            cluster.items.push(item)
+            cluster.count += 1
+        }
+
+        const clusters = [...groupedMap.values()].sort((left, right) => right.count - left.count)
+
+        res.status(200).json({
+            message: "Clusters fetched successfully",
+            clusters
+        })
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        })
+    }
+}
+
 export async function clusterTopicsController(req, res){
     try {
         const userId = req.user.id

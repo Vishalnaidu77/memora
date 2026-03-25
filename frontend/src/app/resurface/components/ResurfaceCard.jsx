@@ -44,12 +44,6 @@ export default function ResurfaceCard({ item, index }) {
   const imageSrc = item?.image || item?.thumbnail || item?.file?.fileUrl;
   const detailLabel = getMeta(item).split(" - ")[1] || "ITEM";
 
-   const createdAt = item?.createdAt ? new Date(item.createdAt) : null;
-
-   const diff = Date.now() - createdAt.getTime()
-   const days = 1000 * 60 * 60 * 24
-   console.log(diff/days);
-
   return (
     <article className="group">
       <div

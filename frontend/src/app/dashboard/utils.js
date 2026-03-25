@@ -1,15 +1,19 @@
 export function getBadge(type) {
+  const normalizedType = type === "tweet" ? "twitter" : type;
   const badges = {
     article: "ARTICLE",
     video: "VIDEO",
     twitter: "THREAD",
     pdf: "PDF",
+    image: "IMAGE",
+    file: "FILE",
   };
 
-  return badges[type] || "ITEM";
+  return badges[normalizedType] || "ITEM";
 }
 
 export function getMeta(item) {
+  const itemType = item?.contentType || item?.type;
   const createdAt = item?.createdAt ? new Date(item.createdAt) : null;
   const timeLabel =
     createdAt && !Number.isNaN(createdAt.getTime())
@@ -25,13 +29,17 @@ export function getMeta(item) {
     item?.readTime ||
     item?.pages ||
     item?.author ||
-    (item?.type === "pdf"
+    (itemType === "pdf"
       ? "PDF"
-      : item?.type === "video"
+      : itemType === "video"
         ? "VIDEO"
-        : item?.type === "twitter"
+        : itemType === "twitter" || itemType === "tweet"
           ? "THREAD"
-          : "ARTICLE");
+          : itemType === "image"
+            ? "IMAGE"
+            : itemType === "file"
+              ? "FILE"
+              : "ARTICLE");
 
   return `${timeLabel} - ${String(detail).toUpperCase()}`;
 }

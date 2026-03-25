@@ -30,3 +30,13 @@ export async function getResurfaceItems() {
     const res = await api.get("/resurface")
     return res.data
 }
+
+export async function getClusters() {
+    const res = await api.get("/clusters")
+    return res.data
+}
+
+export async function generateClusters() {
+    const res = await api.post("/cluster-topics")
+    return res.data
+}

@@ -2,11 +2,22 @@
 
 import { ItemContext } from "../../context/ItemContext";
 import { useContext } from "react";
-import { getItems, getResurfaceItems, saveItem } from "../services/items.api";
+import { generateClusters, getClusters, getItems, getResurfaceItems, saveItem } from "../services/items.api";
 
 const useItem = () => {
 
-    const { items, loading, setItems, setLoading, allItems, setAllItems, resurfaceItems, setResurfaceItems } = useContext(ItemContext)
+    const {
+        items,
+        loading,
+        setItems,
+        setLoading,
+        allItems,
+        setAllItems,
+        resurfaceItems,
+        setResurfaceItems,
+        clusterGroups,
+        setClusterGroups
+    } = useContext(ItemContext)
 
     const handleSaveItem = async (url, file) =>{
         setLoading(true)
@@ -52,6 +63,35 @@ const useItem = () => {
 
     }
 
+    const handleGetClusters = async () => {
+        setLoading(true)
+
+        try {
+            const res = await getClusters()
+            setClusterGroups(res.clusters ?? [])
+            return res.clusters ?? []
+        } catch (err) {
+            throw err
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleGenerateClusters = async () => {
+        setLoading(true)
+
+        try {
+            await generateClusters()
+            const res = await getClusters()
+            setClusterGroups(res.clusters ?? [])
+            return res.clusters ?? []
+        } catch (err) {
+            throw err
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return {
         items,
         loading,
@@ -63,7 +103,11 @@ const useItem = () => {
         allItems,
         resurfaceItems, 
         setResurfaceItems,
-        handleResurfaceItems
+        handleResurfaceItems,
+        clusterGroups,
+        setClusterGroups,
+        handleGetClusters,
+        handleGenerateClusters
     }
 }
 
