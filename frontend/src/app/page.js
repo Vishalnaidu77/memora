@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTheme } from "./ThemeContext";
+import useAuth from "./hooks/useAuth";
 
 const featureCards = [
   {
@@ -21,6 +22,7 @@ const featureCards = [
 
 export default function Home() {
   const { theme } = useTheme();
+  const { user } = useAuth()
 
   return (
     <main
@@ -60,7 +62,7 @@ export default function Home() {
             </p>
 
             <Link
-              href="/register"
+              href={user ? "/dashboard" : "/register"}
               className="mt-10 inline-flex items-center justify-center border px-8 py-4 text-[11px] font-semibold tracking-[0.3em] transition-opacity hover:opacity-85"
               style={{
                 borderColor: theme.foreground,
@@ -68,7 +70,7 @@ export default function Home() {
                 color: theme.background,
               }}
             >
-              START ARCHIVE
+              {user ? "ACCESS ARCHIVE" : "START ARCHIVE"}
             </Link>
           </div>
         </div>
@@ -231,11 +233,11 @@ export default function Home() {
               The internet is a vast ocean. Stop drowning. Start archiving with intention.
             </p>
             <Link
-              href="/register"
+              href={user ? "/dashboard" : "/register"}
               className="mt-10 inline-flex items-center gap-3 border-b pb-2 text-sm font-semibold tracking-[0.18em]"
               style={{ borderColor: theme.foreground }}
             >
-              START ARCHIVE
+              {user ? "ACCESS ARCHIVE" : "START ARCHIVE"}
               <span aria-hidden="true">-&gt;</span>
             </Link>
           </div>

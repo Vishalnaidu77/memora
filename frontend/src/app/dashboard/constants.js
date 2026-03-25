@@ -6,18 +6,6 @@ export const FILTERS = [
   { label: "PDFS", value: "pdf" },
 ];
 
-export const TOP_NAV = ["LIBRARY", "RESURFACE", "INSIGHTS"];
-
-export const SIDE_NAV = [
-  { icon: "smart_display", label: "LIBRARY", active: true },
-  { icon: "autorenew", label: "RESURFACE" },
-  { icon: "analytics", label: "INSIGHTS" },
-];
-
-export const FOOTER_NAV = [
-  { icon: "settings", label: "SETTINGS" },
-  { icon: "inventory_2", label: "ARCHIVE" },
-];
 
 export const FALLBACK_BACKGROUNDS = [
   "linear-gradient(180deg, #171717 0%, #090909 100%)",
