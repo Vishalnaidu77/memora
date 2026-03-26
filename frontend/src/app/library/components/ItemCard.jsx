@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { useTheme } from "../../ThemeContext";
 import { FALLBACK_BACKGROUNDS } from "../constants";
 import { getBadge, getDisplayTitle, getMeta } from "../utils";
+import { useRouter } from "next/navigation";
 
 function PlaceholderArtwork({ index, badge, theme }) {
   return (
@@ -27,9 +29,10 @@ export default function ItemCard({ item, index }) {
   const { theme } = useTheme();
   const badge = getBadge(item?.type);
   const imageSrc = item?.image || item?.thumbnail;
+  const router = useRouter()
 
   return (
-    <article className="group">
+    <article className="group" onClick={() => router.push(`/library/items/${item._id}`)}>
       <div
         className="relative mb-6 aspect-[0.76] overflow-hidden"
         style={{ backgroundColor: theme.panelOuter, border: `1px solid ${theme.lowBorder}` }}

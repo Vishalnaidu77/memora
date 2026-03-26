@@ -62,7 +62,7 @@ export default function Home() {
             </p>
 
             <Link
-              href={user ? "/dashboard" : "/register"}
+              href={user ? "/library" : "/register"}
               className="mt-10 inline-flex items-center justify-center border px-8 py-4 text-[11px] font-semibold tracking-[0.3em] transition-opacity hover:opacity-85"
               style={{
                 borderColor: theme.foreground,
@@ -233,7 +233,7 @@ export default function Home() {
               The internet is a vast ocean. Stop drowning. Start archiving with intention.
             </p>
             <Link
-              href={user ? "/dashboard" : "/register"}
+              href={user ? "/library" : "/register"}
               className="mt-10 inline-flex items-center gap-3 border-b pb-2 text-sm font-semibold tracking-[0.18em]"
               style={{ borderColor: theme.foreground }}
             >
