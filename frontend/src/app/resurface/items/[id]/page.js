@@ -4,7 +4,7 @@ import Link from "next/link";
 import { use, useEffect, useMemo } from "react";
 import { useTheme } from "../../../ThemeContext";
 import useItem from "../../../hooks/useItem";
-import { getBadge, getMeta, getRelativeSavedLabel } from "../../utils";
+import { getBadge, getMeta, getRelativeSavedLabel } from "../../../library/utils";
 
 function DetailRow({ label, value, theme }) {
   if (!value) return null;
@@ -77,11 +77,11 @@ export default function Page({ params }) {
       >
         <div className="mx-auto max-w-6xl">
           <Link
-            href="/library"
+            href="/resurface"
             className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
             style={{ borderColor: theme.lowBorder, color: theme.muted }}
           >
-            BACK TO LIBRARY
+            BACK TO RESURFACE
           </Link>
 
           <div
@@ -110,11 +110,11 @@ export default function Page({ params }) {
     >
       <section className="mx-auto max-w-6xl px-6 py-10 md:px-8">
         <Link
-          href="/library"
+          href="/resurface"
           className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
           style={{ borderColor: theme.lowBorder, color: theme.muted }}
         >
-          BACK TO LIBRARY
+          BACK TO RESURFACE
         </Link>
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(320px,420px),1fr]">

@@ -1,8 +1,8 @@
 'use client'
 
 import { useTheme } from "../../ThemeContext";
-import { FALLBACK_BACKGROUNDS } from "../../dashboard/constants";
-import { getBadge, getDisplayTitle, getMeta } from "../../dashboard/utils";
+import { FALLBACK_BACKGROUNDS } from "../../library/constants";
+import { getBadge, getDisplayTitle, getMeta } from "../../library/utils";
 
 function ClusterArtwork({ index, badge, theme }) {
   return (

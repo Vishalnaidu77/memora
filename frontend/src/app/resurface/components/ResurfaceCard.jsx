@@ -1,8 +1,9 @@
 'use client'
 
+import { useRouter } from "next/navigation";
 import { useTheme } from "../../ThemeContext";
-import { FALLBACK_BACKGROUNDS } from "../../dashboard/constants";
-import { getBadge, getDisplayTitle, getMeta, getRelativeSavedLabel } from "../../dashboard/utils";
+import { FALLBACK_BACKGROUNDS } from "../../library/constants";
+import { getBadge, getDisplayTitle, getMeta, getRelativeSavedLabel } from "../../library/utils";
 
 function ResurfaceArtwork({ index, badge, theme }) {
 
@@ -43,9 +44,10 @@ export default function ResurfaceCard({ item, index }) {
   const badge = getBadge(item?.contentType || item?.type);
   const imageSrc = item?.image || item?.thumbnail || item?.file?.fileUrl;
   const detailLabel = getMeta(item).split(" - ")[1] || "ITEM";
+  const router = useRouter()
 
   return (
-    <article className="group">
+    <article className="group" onClick={() => router.push(`/resurface/items/${item._id}`)}>
       <div
         className="relative mb-6 aspect-[0.82] overflow-hidden"
         style={{ backgroundColor: theme.panelOuter, border: `1px solid ${theme.lowBorder}` }}
