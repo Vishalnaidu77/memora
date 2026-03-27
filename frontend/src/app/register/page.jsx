@@ -7,6 +7,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import useAuth from "../hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 
 export default function MemoraSignUp() {
@@ -16,6 +17,7 @@ export default function MemoraSignUp() {
   const [password, setPassword] = useState("");
 
   const { user, setLoading, handleRegister } = useAuth()
+  const router = useRouter()
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -23,6 +25,7 @@ export default function MemoraSignUp() {
 
     handleRegister(fullName, email, password)
     setLoading(false)
+    router.push("/library")
 
     setFullName("")
     setEmail("")

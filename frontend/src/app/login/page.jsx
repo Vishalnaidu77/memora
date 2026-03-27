@@ -24,7 +24,7 @@ export default function MemoraSignIn() {
     e.preventDefault();
     
     handleLogin(email, password)
-    router.push("/dashboard")
+    router.push("/library")
         
     setEmail("")
     setPassword("")
