@@ -2,7 +2,7 @@
 
 import { ItemContext } from "../../context/ItemContext";
 import { useContext } from "react";
-import { generateClusters, getClusters, getItems, getResurfaceItems, saveItem } from "../services/items.api";
+import { deleteItem, generateClusters, getClusters, getItems, getResurfaceItems, saveItem } from "../services/items.api";
 
 const useItem = () => {
 
@@ -92,6 +92,20 @@ const useItem = () => {
         }
     }
 
+    const handleDeleteItem = async (itmeId) => {
+        setLoading(true)
+
+        try {
+            const res = await deleteItem(itmeId)
+            setLoading(false)
+            return res.deletedItem
+        } catch (err) {
+            throw err
+        } finally{
+            setLoading(false)
+        }
+    }
+
     return {
         items,
         loading,
@@ -107,7 +121,8 @@ const useItem = () => {
         clusterGroups,
         setClusterGroups,
         handleGetClusters,
-        handleGenerateClusters
+        handleGenerateClusters,
+        handleDeleteItem
     }
 }
 

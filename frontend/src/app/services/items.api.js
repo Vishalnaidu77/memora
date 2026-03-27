@@ -40,3 +40,8 @@ export async function generateClusters() {
     const res = await api.post("/cluster-topics")
     return res.data
 }
+
+export async function deleteItem(itemId) {
+    const res = await api.delete(`/delete/${itemId}`)
+    return res.data
+}

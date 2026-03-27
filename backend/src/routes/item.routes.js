@@ -16,7 +16,7 @@ itemRouter.get("/get-item", identifyUser, getItemsController)
 itemRouter.patch("/update/:itemId", updateItemsController)
 
 // DELETE /api/item/delete/:itemId
-itemRouter.delete("/delete/:itemId", deleteItemsController)
+itemRouter.delete("/delete/:itemId", identifyUser, deleteItemsController)
 
 // Search /api/item/search
 itemRouter.get("/search", identifyUser, searchItemsController)

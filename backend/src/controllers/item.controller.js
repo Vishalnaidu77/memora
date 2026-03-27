@@ -202,18 +202,21 @@ export async function updateItemsController(req, res) {
 
 export async function deleteItemsController(req, res) {
     try {
-        const itemId = req.params.itemId
+        const itemId = new mongoose.Types.ObjectId(req.params.itemId)
         const userId = new mongoose.Types.ObjectId(req.user)
 
+        console.log(itemId, userId);
+    
         const item = await itemModel.findOne({ _id: itemId, userId })
+        console.log(item);
 
         if (!item) {
             return res.status(404).json({ message: "Item not found" })
         }
 
-        await itemModel.findByIdAndDelete(itemId)
+        const deletedItem = await itemModel.findByIdAndDelete(itemId)
 
-        res.status(200).json({ message: "Item deleted" })
+        res.status(200).json({ message: "Item deleted", deletedItem })
 
     } catch (err) {
         res.status(500).json({ message: err.message })
