@@ -11,6 +11,13 @@ function PlaceholderArtwork({ index, badge, theme, item }) {
 
   const [isHover, setIsHover] = useState(false);
   const router = useRouter()
+  const { handleDeleteItem, handleGetItems } = useItem()
+
+  const handleDelete = async(e) => {
+    e.preventDefault()
+    await handleDeleteItem(item._id)
+    await handleGetItems()
+  }
 
   return (
     <div
@@ -48,11 +55,7 @@ function PlaceholderArtwork({ index, badge, theme, item }) {
         </div>
         <button 
           className={`dlt-btn absolute top-5 right-5 pointer-events-auto cursor-pointer hover:text-red-600 duration-200`} 
-          onClick={(e) => {
-            e.preventDefault()
-            handleDeleteItem(item._id)
-            handleGetItems()
-          }}>
+          onClick={handleDelete}>
           <MdDeleteOutline />
         </button>
       </div>
@@ -68,6 +71,12 @@ export default function ItemCard({ item, index }) {
   const [isHover, setIsHover] = useState(false);
 
   const { handleDeleteItem, handleGetItems } = useItem()
+
+  const handleDelete = async(e) => {
+    e.preventDefault()
+    await handleDeleteItem(item._id)
+    await handleGetItems()
+  }
 
   return (
     <article className="group" >
@@ -104,11 +113,7 @@ export default function ItemCard({ item, index }) {
                 </div>
                 <button 
                   className={`dlt-btn absolute top-5 right-5 pointer-events-auto cursor-pointer hover:text-red-600 duration-200`} 
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleDeleteItem(item._id)
-                    handleGetItems()
-                  }}>
+                  onClick={handleDelete}>
                   <MdDeleteOutline />
                 </button>
               </div>

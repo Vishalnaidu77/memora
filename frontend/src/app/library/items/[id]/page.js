@@ -5,6 +5,8 @@ import { use, useEffect, useMemo } from "react";
 import { useTheme } from "../../../ThemeContext";
 import useItem from "../../../hooks/useItem";
 import { getBadge, getMeta, getRelativeSavedLabel } from "../../utils";
+import { MdDeleteOutline } from "react-icons/md";
+import { useRouter } from "next/navigation";
 
 function DetailRow({ label, value, theme }) {
   if (!value) return null;
@@ -26,7 +28,7 @@ function DetailRow({ label, value, theme }) {
 
 export default function Page({ params }) {
   const { theme } = useTheme();
-  const { allItems, handleGetItems, loading } = useItem();
+  const { allItems, handleGetItems, handleDeleteItem, loading } = useItem();
 
   const { id } = use(params)
 
@@ -53,6 +55,15 @@ export default function Page({ params }) {
     item?.content ||
     item?.notes ||
     "";
+    
+
+    const router = useRouter()
+
+  const handleDelete = async (e) => {
+    e.preventDefault()
+    await handleDeleteItem(item?._id)
+    router.push("/library")
+  }
 
   if (loading && !item) {
     return (
@@ -105,19 +116,26 @@ export default function Page({ params }) {
 
   return (
     <main
-      className="min-h-[calc(100vh-81px)]"
+      className="max-h-vh]"
       style={{ backgroundColor: theme.background, color: theme.foreground }}
     >
-      <section className="mx-auto max-w-6xl px-6 py-10 md:px-8">
-        <Link
-          href="/library"
-          className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
-          style={{ borderColor: theme.lowBorder, color: theme.muted }}
-        >
-          BACK TO LIBRARY
-        </Link>
+      <section className="mx-auto px-6 py-10 md:px-8">
+        <div className="top-links flex items-center justify-between px-8">
+          <Link
+            href="/library"
+            className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
+            style={{ borderColor: theme.lowBorder, color: theme.muted }}
+          >
+            BACK TO LIBRARY
+          </Link>
+          <button 
+            className={`dlt-btn cursor-pointer text-2xl hover:text-red-600 duration-200`} 
+            onClick={handleDelete}>
+            <MdDeleteOutline  />
+          </button>
+        </div>
 
-        <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(320px,420px),1fr]">
+        <div className="mt-10 grid gap-10 md:flex grid-cols-[minmax(320px,420px),1fr]">
           <div
             className="overflow-hidden"
             style={{ backgroundColor: theme.panelOuter, border: `1px solid ${theme.lowBorder}` }}
@@ -127,7 +145,7 @@ export default function Page({ params }) {
                 <img
                   src={imageSrc}
                   alt={item?.title || "Library item"}
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-cover"
                 />
             ) : (
               <div className="flex aspect-[0.78] items-center justify-center p-8 text-center">
