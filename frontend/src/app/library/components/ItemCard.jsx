@@ -1,8 +1,9 @@
-import Link from "next/link";
+import Button from "../../components/Button";
 import { useTheme } from "../../ThemeContext";
 import { FALLBACK_BACKGROUNDS } from "../constants";
 import { getBadge, getDisplayTitle, getMeta } from "../utils";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 function PlaceholderArtwork({ index, badge, theme }) {
   return (
@@ -29,22 +30,46 @@ export default function ItemCard({ item, index }) {
   const { theme } = useTheme();
   const badge = getBadge(item?.type);
   const imageSrc = item?.image || item?.thumbnail;
-  const router = useRouter()
+  const router = useRouter();
+  const [isHover, setIsHover] = useState(false);
 
   return (
-    <article className="group" onClick={() => router.push(`/library/items/${item._id}`)}>
+    <article className="group" >
       <div
         className="relative mb-6 aspect-[0.76] overflow-hidden"
         style={{ backgroundColor: theme.panelOuter, border: `1px solid ${theme.lowBorder}` }}
+        onMouseEnter={() => setIsHover(true)}
+        onMouseLeave={() => setIsHover(false)}
       >
         {imageSrc ? (
-          <div className="flex h-full w-full items-center justify-center p-4" style={{ backgroundColor: theme.panelOuter }}>
-            <img
-              src={imageSrc}
-              alt={item?.title || "Library item"}
-              className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.03]"
-            />
-          </div>
+          <>
+            <div
+              className="relative flex h-full w-full items-center justify-center p-4 cursor-pointer"
+              style={{ backgroundColor: theme.panelOuter }}
+            >
+              <img
+                src={imageSrc}
+                alt={item?.title || "Library item"}
+                className="h-full w-full object-contain transition duration-500 group-hover:scale-[1.03]"
+              />
+            </div>
+            <div
+              className={`pointer-events-none absolute top-0 h-full w-full flex justify-center items-center gap-2 bg-black/40 transition-all ${
+                isHover ? "opacity-100" : "opacity-0"
+              } duration-500`}
+            >
+               <div className={`center-btns flex  gap-4 pointer-events-auto `}>
+                  <Button theme={theme} variant="secondary" className="text-[10px] bg-white text-black tracking-[0.18em]" onClick={() =>  router.push(`/library/items/${item._id}`)}>
+                    Check Items
+                  </Button>
+                  <Button theme={theme} variant="secondary" className="text-[10px] bg-white text-black tracking-[0.18em]">
+                    <a href={item.url} target="_blank">Item source</a>
+                  </Button>
+                </div>
+              </div>
+           
+              <button className="dlt-btn"></button>
+          </>
         ) : (
           <PlaceholderArtwork index={index} badge={badge} theme={theme} />
         )}
@@ -66,7 +91,9 @@ export default function ItemCard({ item, index }) {
         {getDisplayTitle(item?.title, 54)}
       </h3>
 
-      <p className="mt-4 text-[11px] tracking-[0.24em]" style={{ color: theme.muted }}>{getMeta(item)}</p>
+      <p className="mt-4 text-[11px] tracking-[0.24em]" style={{ color: theme.muted }}>
+        {getMeta(item)}
+      </p>
     </article>
   );
 }
