@@ -10,7 +10,8 @@ const navItems = [
   { href: "/", label: "Home"},
   { href: "/library", label: "Library" },
   { href: "/clusters", label: "Cluster" },
-  { href: "/resurface", label: "Resurface"}
+  { href: "/resurface", label: "Resurface"},
+  { href: "/graph", label: "Graph"}
 ];
 
 const authItems = [

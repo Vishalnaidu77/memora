@@ -14,9 +14,12 @@ export default function DashboardPage() {
   const [ addItemToggle, setAddItemToggle ] = useState(false)
 
   useEffect(() => {
-    handleGetItems();
-  }, []);
+     const renderItems = async () => {
+      await handleGetItems()
+     }
 
+     renderItems()
+  }, []);
 
   const items = useMemo(() => allItems.filter(Boolean), [allItems]);
 

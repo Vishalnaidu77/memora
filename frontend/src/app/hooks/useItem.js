@@ -1,7 +1,7 @@
 'use client'
 
 import { ItemContext } from "../../context/ItemContext";
-import { useContext, useEffect } from "react";
+import { useCallback, useContext, useEffect } from "react";
 import { deleteItem, generateClusters, getClusters, getItems, getResurfaceItems, knowledgeGraph, saveItem } from "../services/items.api";
 
 const useItem = () => {
@@ -108,7 +108,7 @@ const useItem = () => {
         }
     }
 
-    const handleKnowledgeGraph = async () => {
+    const handleKnowledgeGraph = useCallback(async () => {
         setLoading(true)
 
         try {
@@ -120,7 +120,7 @@ const useItem = () => {
         } finally{
             setLoading(false)
         }
-    }
+    }, [setGraph, setLoading])
 
     return {
         items,

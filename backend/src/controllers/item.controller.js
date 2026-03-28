@@ -430,30 +430,36 @@ export async function getGraphDataController(req, res) {
         })
 
         const nodes = items.map(item => ({
-            id: item._id,
+            id: item._id.toString(),
             title: item.title,
             tags: item.tags,
             image: item.image,
             contentType: item.contentType
         }))
 
+        const nodeIds = new Set(nodes.map(node => node.id))
+
         const edges = []
         for (const item of items){
             const vector = vectorMap[item._id.toString()]
-            
+            if (!vector) continue
+              
             const relatedIds = await searchSimilar(vector, userId, 3)
-
+  
             relatedIds.forEach(relatedId => {
-                if(relatedId !== item._id.toString()){
+                const sourceId = item._id.toString()
+                const targetId = relatedId.toString()
 
+                if(sourceId !== targetId && nodeIds.has(targetId)){
+  
                     const exist = edges.find(e => 
-                        (e.source === item._id.toString() && e.target === relatedId) ||
-                        (e.source === relatedId && e.target === item._id.toString())
+                        (e.source === sourceId && e.target === targetId) ||
+                        (e.source === targetId && e.target === sourceId)
                     )
                     if (!exist) {
                         edges.push({
-                            source: item._id.toString(),
-                            target: relatedId
+                            source: sourceId,
+                            target: targetId
                         })
                     }
                 }
@@ -461,7 +467,7 @@ export async function getGraphDataController(req, res) {
         }
         
         res.status(200).json({
-            message: "Fetch 3 similar items",
+            message: "Fetch similar items",
             graph: {
                 nodes,
                 edges
