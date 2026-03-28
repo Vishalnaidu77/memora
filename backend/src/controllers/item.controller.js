@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { itemModel } from "../models/item.model.js"
 import { fetchMatadata } from "../service/metadata.service.js";
 import { generateEmbedding, generateTags } from "../service/ai.service.js";
-import { searchSimilar, storeVector } from "../service/qdrant.service.js";
+import { getUserVectors, searchSimilar, storeVector } from "../service/qdrant.service.js";
 import { uploadFile } from "../service/supabse.service.js";
 import { randomUUID } from "crypto";
 import { extractTextFromImage, extractTextFromPdf } from "../service/file.processor.js";
@@ -416,3 +416,57 @@ export async function clusterTopicsController(req, res){
         })
     }
 }
+
+export async function getGraphDataController(req, res) {
+    try {
+        const userId = req.user.id
+        
+        const items = await itemModel.find({userId})
+        const qdrantItem = await getUserVectors(userId)
+        
+        const vectorMap = {}
+        qdrantItem.forEach(points => {
+            vectorMap[points.payload.mongoId] = points.vector
+        })
+
+        const nodes = items.map(item => ({
+            id: item._id,
+            title: item.title,
+            tags: item.tags,
+            image: item.image,
+            contentType: item.contentType
+        }))
+
+        const edges = []
+        for (const item of items){
+            const vector = vectorMap[item._id.toString()]
+            
+            const relatedIds = await searchSimilar(vector, userId, 3)
+
+            relatedIds.forEach(relatedId => {
+                if(relatedId !== item._id.toString()){
+
+                    const exist = edges.find(e => 
+                        (e.source === item._id.toString() && e.target === relatedId) ||
+                        (e.source === relatedId && e.target === item._id.toString())
+                    )
+                    if (!exist) {
+                        edges.push({
+                            source: item._id.toString(),
+                            target: relatedId
+                        })
+                    }
+                }
+            })   
+        }
+        
+        res.status(200).json({
+            message: "Fetch 3 similar items",
+            graph: [
+                nodes, edges
+            ]
+        })
+    } catch (err) {
+        return res.status(400).json({ message : err.message })
+    }
+}   

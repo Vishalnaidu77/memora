@@ -1,6 +1,6 @@
 import express from 'express'
 import multer from 'multer'
-import { clusterTopicsController, deleteItemsController, getClustersController, getItemsController, relatedItemsController, resurfaceController, saveItemController, searchItemsController, updateItemsController } from '../controllers/item.controller.js'
+import { clusterTopicsController, deleteItemsController, getClustersController, getGraphDataController, getItemsController, relatedItemsController, resurfaceController, saveItemController, searchItemsController, updateItemsController } from '../controllers/item.controller.js'
 import { identifyUser } from '../middleware/auth.middleware.js'
 
 const itemRouter = express.Router()
@@ -32,4 +32,7 @@ itemRouter.get("/clusters", identifyUser, getClustersController)
 
 // Topic cluster api/item/cluster-topics
 itemRouter.post("/cluster-topics", identifyUser, clusterTopicsController)
+
+// Knowledge graph api/item/graph
+itemRouter.get("/graph", identifyUser, getGraphDataController)
 export default itemRouter;
