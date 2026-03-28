@@ -462,9 +462,10 @@ export async function getGraphDataController(req, res) {
         
         res.status(200).json({
             message: "Fetch 3 similar items",
-            graph: [
-                nodes, edges
-            ]
+            graph: {
+                nodes,
+                edges
+            }
         })
     } catch (err) {
         return res.status(400).json({ message : err.message })

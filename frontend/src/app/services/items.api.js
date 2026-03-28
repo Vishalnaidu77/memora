@@ -45,3 +45,8 @@ export async function deleteItem(itemId) {
     const res = await api.delete(`/delete/${itemId}`)
     return res.data
 }
+
+export async function knowledgeGraph() {
+    const res = await api.get("/graph")
+    return res.data
+}

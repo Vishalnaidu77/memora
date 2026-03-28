@@ -1,8 +1,8 @@
 'use client'
 
 import { ItemContext } from "../../context/ItemContext";
-import { useContext } from "react";
-import { deleteItem, generateClusters, getClusters, getItems, getResurfaceItems, saveItem } from "../services/items.api";
+import { useContext, useEffect } from "react";
+import { deleteItem, generateClusters, getClusters, getItems, getResurfaceItems, knowledgeGraph, saveItem } from "../services/items.api";
 
 const useItem = () => {
 
@@ -16,7 +16,9 @@ const useItem = () => {
         resurfaceItems,
         setResurfaceItems,
         clusterGroups,
-        setClusterGroups
+        setClusterGroups, 
+        graph, 
+        setGraph
     } = useContext(ItemContext)
 
     const handleSaveItem = async (url, file) =>{
@@ -106,6 +108,20 @@ const useItem = () => {
         }
     }
 
+    const handleKnowledgeGraph = async () => {
+        setLoading(true)
+
+        try {
+            const res = await knowledgeGraph()
+            setGraph(res.graph)
+            return res.graph
+        } catch (err) {
+            throw err
+        } finally{
+            setLoading(false)
+        }
+    }
+
     return {
         items,
         loading,
@@ -122,7 +138,9 @@ const useItem = () => {
         setClusterGroups,
         handleGetClusters,
         handleGenerateClusters,
-        handleDeleteItem
+        handleDeleteItem,
+        graph,
+        handleKnowledgeGraph
     }
 }
 
