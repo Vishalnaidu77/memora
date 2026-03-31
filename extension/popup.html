@@ -1,17 +1,61 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
   <body>
-    <h2>Save to Memora</h2>
-    <input id="email" type="email" placeholder="Email" />
-    <input id="password" type="password" placeholder="Password" />
-    <button id="login-btn" type="button">Login</button>
+    <main class="popup-shell">
+      <section class="popup-card">
+        <div class="card-glow" aria-hidden="true"></div>
 
-    <hr />
+        <header class="popup-header">
+          <p class="eyebrow">Browser Archive</p>
+          <h1>Save to Memora</h1>
+          <p class="subtitle" id="subtitle">
+            Sign in to send this page directly to your archive.
+          </p>
+        </header>
 
-    <input id="title" type="text" placeholder="Page title" />
-    <input id="url" type="text" placeholder="Page URL" />
-    <button id="save-btn" type="button">Save</button>
-    <p id="status"></p>
+        <section id="login-view" class="view">
+          <div class="form-field">
+            <label for="email">Identity / Email</label>
+            <input id="email" type="email" placeholder="archetype@ethos.digital" />
+          </div>
+
+          <div class="form-field">
+            <label for="password">Key / Password</label>
+            <input id="password" type="password" placeholder="Enter your password" />
+          </div>
+
+          <button id="login-btn" class="primary-btn" type="button">Initialize Session</button>
+        </section>
+
+        <section id="save-view" class="view" hidden>
+          <div class="session-row">
+            <p class="session-copy">
+              Session active. Review the page details before saving.
+            </p>
+            <button id="logout-btn" class="ghost-btn" type="button">Switch</button>
+          </div>
+
+          <div class="form-field">
+            <label for="title">Page Title</label>
+            <input id="title" type="text" placeholder="Captured page title" />
+          </div>
+
+          <div class="form-field">
+            <label for="url">Page URL</label>
+            <input id="url" type="text" placeholder="https://example.com/article" />
+          </div>
+
+          <button id="save-btn" class="primary-btn" type="button">Save Item</button>
+        </section>
+
+        <p id="status" class="status" aria-live="polite"></p>
+      </section>
+    </main>
 
     <script src="popup.js"></script>
   </body>
