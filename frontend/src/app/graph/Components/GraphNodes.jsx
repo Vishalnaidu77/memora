@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { useTheme } from '../../ThemeContext'
+import { useRouter } from 'next/navigation'
 
 const GraphNodes = ({ graph, handleKnowledgeGraph }) => {
   const { theme } = useTheme()
@@ -10,6 +11,8 @@ const GraphNodes = ({ graph, handleKnowledgeGraph }) => {
   const containerRef = useRef(null)
   const hasFetchedRef = useRef(false)
   const [size, setSize] = useState({ width: 960, height: 560 })
+
+  const router = useRouter()
 
   useEffect(() => {
     if (hasFetchedRef.current) return
@@ -120,6 +123,10 @@ const GraphNodes = ({ graph, handleKnowledgeGraph }) => {
       .attr('stroke', theme.background)
       .attr('stroke-width', 2)
       .attr('filter', 'url(#node-glow)')
+      .on("click", (e, d) => {
+        e.stopPropagation()
+        router.push(`/graph/items/${d.id}`)
+      })
       .call(
         d3.drag()
           .on('start', dragStarted)
@@ -158,8 +165,7 @@ const GraphNodes = ({ graph, handleKnowledgeGraph }) => {
       .force('x', d3.forceX(width / 2).strength(0.05))
       .force('y', d3.forceY(height / 2).strength(0.05))
       .force('center', d3.forceCenter(width / 2, height / 2))
-
-    simulation.on('tick', () => {
+ simulation.on('tick', () => {
       nodes.forEach((d) => {
         const radius = nodeRadius(d)
         const labelWidth = d.labelWidth || 0
