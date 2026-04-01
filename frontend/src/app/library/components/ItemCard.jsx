@@ -41,10 +41,10 @@ function PlaceholderArtwork({ index, badge, theme, item }) {
         {badge}
       </div>
       <div
-      className={`pointer-events-none absolute top-0 z-50 h-full w-full flex justify-center items-center gap-2 bg-black/40 transition-all ${
+        className={`pointer-events-none absolute top-0 z-50 h-full w-full flex justify-center items-center gap-2 bg-black/40 transition-all ${
         isHover ? "opacity-100" : "opacity-0"
-      } duration-500`}
-    >
+       } duration-500`}
+      >
       <div className={`center-btns flex gap-4 pointer-events-auto `}>
           <Button theme={theme} variant="secondary" className="text-[10px] bg-white text-black tracking-[0.18em]" onClick={() =>  router.push(`/library/items/${item._id}`)}>
             Check Items

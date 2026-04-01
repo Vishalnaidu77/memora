@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "../../ThemeContext";
 import { FALLBACK_BACKGROUNDS } from "../../library/constants";
 import { getBadge, getDisplayTitle, getMeta, getRelativeSavedLabel } from "../../library/utils";
+import Button from "../../components/Button";
+import { useState } from "react";
+import useItem from "../../hooks/useItem";
+import { MdDeleteOutline } from "react-icons/md";
 
 function ResurfaceArtwork({ index, badge, theme }) {
-
-  
 
   return (
     <div
@@ -44,13 +46,27 @@ export default function ResurfaceCard({ item, index }) {
   const badge = getBadge(item?.contentType || item?.type);
   const imageSrc = item?.image || item?.thumbnail || item?.file?.fileUrl;
   const detailLabel = getMeta(item).split(" - ")[1] || "ITEM";
-  const router = useRouter()
+  const router = useRouter();
+
+  const [isHover, setIsHover] = useState(false);
+  const { handleDeleteItem, handleGetItems } = useItem();
+
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleDeleteItem(item._id);
+    await handleGetItems();
+  };
 
   return (
-    <article className="group" onClick={() => router.push(`/resurface/items/${item._id}`)}>
+    <article
+      className="group"
+    >
       <div
         className="relative mb-6 aspect-[0.82] overflow-hidden"
         style={{ backgroundColor: theme.panelOuter, border: `1px solid ${theme.lowBorder}` }}
+        onMouseEnter={() => setIsHover(true)}
+        onMouseLeave={() => setIsHover(false)}
       >
         {imageSrc ? (
           <div className="flex h-full w-full items-center justify-center p-4" style={{ backgroundColor: theme.panelOuter }}>
@@ -78,6 +94,45 @@ export default function ResurfaceCard({ item, index }) {
             >
               RESURFACED
             </p>
+            <div
+              className={`pointer-events-none absolute inset-0 z-50 flex items-center justify-center gap-2 bg-black/40 transition-all duration-500 ${
+                isHover ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <div className="center-btns flex gap-4 pointer-events-auto">
+                <Button
+                  theme={theme}
+                  variant="secondary"
+                  className="text-[10px] bg-white text-black tracking-[0.18em]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/resurface/items/${item._id}`);
+                  }}
+                >
+                  Check Items
+                </Button>
+                <Button
+                  theme={theme}
+                  variant="secondary"
+                  className="text-[10px] bg-white text-black tracking-[0.18em]"
+                >
+                  <a
+                    href={item.file ? item.file.fileUrl || item.image : item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Item source
+                  </a>
+                </Button>
+              </div>
+              <button
+                className="dlt-btn absolute top-5 right-5 pointer-events-auto cursor-pointer duration-200 hover:text-red-600"
+                onClick={handleDelete}
+              >
+                <MdDeleteOutline />
+              </button>
+            </div>
           </>
         ) : null}
       </div>
