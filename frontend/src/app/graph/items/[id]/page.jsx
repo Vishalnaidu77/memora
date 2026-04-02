@@ -88,11 +88,11 @@ export default function Page({ params }) {
       >
         <div className="mx-auto max-w-6xl">
           <Link
-            href="/library"
+            href="/graph"
             className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
             style={{ borderColor: theme.lowBorder, color: theme.muted }}
           >
-            BACK TO LIBRARY
+            BACK TO GRAPH
           </Link>
 
           <div
@@ -122,11 +122,11 @@ export default function Page({ params }) {
       <section className="mx-auto px-6 py-10 md:px-8">
         <div className="top-links flex items-center justify-between px-8">
           <Link
-            href="/library"
+            href="/graph"
             className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
             style={{ borderColor: theme.lowBorder, color: theme.muted }}
           >
-            BACK TO LIBRARY
+            BACK TO GRAPH
           </Link>
           <button 
             className={`dlt-btn cursor-pointer text-2xl hover:text-red-600 duration-200`} 

@@ -105,6 +105,11 @@ input {
   gap: 14px;
 }
 
+.save-view {
+  padding-top: 14px;
+  border-top: 1px solid var(--divider);
+}
+
 .view[hidden] {
   display: none;
 }
@@ -172,33 +177,11 @@ input {
   cursor: wait;
 }
 
-.session-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 2px;
-  padding: 12px 0 4px;
-  border-top: 1px solid var(--divider);
-}
-
 .session-copy {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
-}
-
-.ghost-btn {
-  flex: 0 0 auto;
-  padding: 8px 12px;
-  border: 1px solid var(--low-border);
-  background: transparent;
-  color: var(--foreground);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
 }
 
 .status {

@@ -3,11 +3,9 @@ const API_BASE_URL = "http://localhost:3001/api"
 document.addEventListener("DOMContentLoaded", async () => {
   const emailInput = document.getElementById("email")
   const passwordInput = document.getElementById("password")
-  const titleInput = document.getElementById("title")
   const urlInput = document.getElementById("url")
   const loginBtn = document.getElementById("login-btn")
   const saveBtn = document.getElementById("save-btn")
-  const logoutBtn = document.getElementById("logout-btn")
   const loginView = document.getElementById("login-view")
   const saveView = document.getElementById("save-view")
   const subtitle = document.getElementById("subtitle")
@@ -38,7 +36,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function getActivePageData() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
     const pageData = {
-      title: tab?.title || "",
       url: tab?.url || ""
     }
 
@@ -49,7 +46,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const tabResponse = await chrome.tabs.sendMessage(tab.id, { action: "getPageData" })
       return {
-        title: tabResponse?.title || pageData.title,
         url: tabResponse?.url || pageData.url
       }
     } catch (error) {
@@ -59,8 +55,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function populatePageData() {
     const pageData = await getActivePageData()
-
-    titleInput.value = pageData.title || ""
     urlInput.value = pageData.url || ""
   }
 
@@ -84,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   })
 
-  ;[titleInput, urlInput].forEach((input) => {
+  ;[urlInput].forEach((input) => {
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !saveBtn.disabled) {
         saveBtn.click()
@@ -136,7 +130,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   })
 
   saveBtn.addEventListener("click", async () => {
-    const title = titleInput.value.trim()
     const url = urlInput.value.trim()
     const { token } = await chrome.storage.local.get("token")
 
@@ -162,7 +155,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          title,
           url
         })
       })
@@ -186,13 +178,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     } finally {
       setButtonLoading(saveBtn, false, "Saving...")
     }
-  })
-
-  logoutBtn.addEventListener("click", async () => {
-    await chrome.storage.local.remove(["token", "userEmail"])
-    passwordInput.value = ""
-    toggleView(false)
-    setStatus("Signed out. Log in again to save more pages.")
   })
 
   await hydratePopup()
