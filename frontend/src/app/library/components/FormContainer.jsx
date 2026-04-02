@@ -7,7 +7,7 @@ import React, { useState } from 'react'
 import useItem from '../../hooks/useItem';
 import { IoClose } from "react-icons/io5";
 
-const FormContainer = ({ setAddItemToggle }) => {
+const FormContainer = ({ setAddItemToggle, onSaveResult }) => {
 
     const [ url, setUrl] = useState("")
     const [ file, setFile ] = useState(null)
@@ -18,8 +18,9 @@ const FormContainer = ({ setAddItemToggle }) => {
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        await handleSaveItem(url, file);
+        const result = await handleSaveItem(url, file);
         await handleGetItems()
+        onSaveResult?.(result)
         setUrl("")
         setFile(null)
         setAddItemToggle(false)

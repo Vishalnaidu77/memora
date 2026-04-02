@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const { allItems, handleGetItems, loading } = useItem();
   const [filter, setFilter] = useState("ALL OBJECTS");
   const [ addItemToggle, setAddItemToggle ] = useState(false)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
      const renderItems = async () => {
@@ -20,6 +21,16 @@ export default function DashboardPage() {
 
      renderItems()
   }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setToast(null);
+    }, 3200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
 
   const items = useMemo(() => allItems.filter(Boolean), [allItems]);
 
@@ -30,6 +41,15 @@ export default function DashboardPage() {
 
   const featuredItem = filteredItems[0];
   const synthesisCount = filteredItems.length;
+
+  const handleSaveResult = (result) => {
+    if (!result?.duplicate) return;
+
+    setToast({
+      title: "Already saved",
+      message: "This item is already in your library.",
+    });
+  };
 
   return (
     <main
@@ -45,7 +65,34 @@ export default function DashboardPage() {
           setAddItemToggle={setAddItemToggle}
         />
 
-        {addItemToggle && <FormContainer setAddItemToggle={setAddItemToggle}/>}
+        {toast ? (
+          <div
+            className="fixed right-6 top-60 z-50 w-[min(92vw,360px)] border px-4 py-3"
+            style={{
+              backgroundColor: theme.panelOuter,
+              color: theme.foreground,
+              borderColor: theme.lowBorder,
+              boxShadow: `0 24px 80px ${theme.shadow}`,
+            }}
+          >
+            <p
+              className="text-[11px] tracking-[0.28em]"
+              style={{ color: theme.muted }}
+            >
+              {toast.title}
+            </p>
+            <p className="mt-2 text-sm leading-6" style={{ color: theme.hint }}>
+              {toast.message}
+            </p>
+          </div>
+        ) : null}
+
+        {addItemToggle && (
+          <FormContainer
+            setAddItemToggle={setAddItemToggle}
+            onSaveResult={handleSaveResult}
+          />
+        )}
         <div className="mt-20">
           {loading ? (
             <div className="py-24 text-[11px] tracking-[0.35em]" style={{ color: theme.muted }}>LOADING LIBRARY...</div>

@@ -27,7 +27,7 @@ const useItem = () => {
         try {
             const res = await saveItem(url, file)
             setItems(res.item ?? null)
-            return res.item
+            return res
         } catch(err){
             throw err
         } finally {
