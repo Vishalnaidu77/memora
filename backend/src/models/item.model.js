@@ -77,4 +77,7 @@ const itemSchema = new mongoose.Schema({
 
 }, { timestamps: true })
 
+itemSchema.index({ userId: 1, sourceFingerprint: 1 })
+itemSchema.index({ userId: 1, contentFingerprint: 1 })
+
 export const itemModel = mongoose.model("items", itemSchema)

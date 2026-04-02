@@ -7,15 +7,39 @@ import { uploadFile } from "../service/supabse.service.js";
 import { randomUUID } from "crypto";
 import { extractTextFromImage, extractTextFromPdf } from "../service/file.processor.js";
 import { clusterUserTopics } from "../service/topic.service.js";
+import {
+    buildContentFingerprint,
+    buildSourceFingerprint,
+    findExactDuplicate
+} from "../service/duplicate.service.js";
 
 export async function saveItemController(req, res) {
     try {
         const { url, title, contentType, collectionId } = req.body
         const id = req.user.id 
+        const userId = new mongoose.Types.ObjectId(id)
         const uploadedFile = req.file
 
         if (!url && !uploadedFile) {
             return res.status(400).json({ message: "A url or file is required" })
+        }
+
+        const sourceFingerprint = buildSourceFingerprint({
+            url,
+            fileBuffer: uploadedFile?.buffer
+        })
+
+        const sourceDuplicate = await findExactDuplicate({
+            userId,
+            sourceFingerprint
+        })
+
+        if (sourceDuplicate) {
+            return res.status(200).json({
+                message: "Item already saved",
+                item: sourceDuplicate,
+                duplicate: true
+            })
         }
 
         let meta = {}
@@ -70,9 +94,27 @@ export async function saveItemController(req, res) {
         const resolvedContentType = resolveContentType(
             contentType || uploadedFile?.mimetype
         )
+        const contentFingerprint = buildContentFingerprint({
+            title: finalTitle,
+            description: finalDescription,
+            content: finalContent
+        })
+
+        const contentDuplicate = await findExactDuplicate({
+            userId,
+            contentFingerprint
+        })
+
+        if (contentDuplicate) {
+            return res.status(200).json({
+                message: "Item already saved",
+                item: contentDuplicate,
+                duplicate: true
+            })
+        }
 
         const item = await itemModel.create({
-            userId: new mongoose.Types.ObjectId(id),
+            userId,
             url: url || null,
             title: finalTitle,
             description: finalDescription,
@@ -81,7 +123,9 @@ export async function saveItemController(req, res) {
             content: finalContent,
             contentType: resolvedContentType,
             collectionId: collectionId || null,
-            file: fileData
+            file: fileData,
+            sourceFingerprint,
+            contentFingerprint
         })
 
         await processWithAi(item._id, id, finalTitle, finalDescription, finalContent, resolvedContentType)
