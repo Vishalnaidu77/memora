@@ -59,7 +59,22 @@ const itemSchema = new mongoose.Schema({
         default: 0
     },
     topicClusterId: String,
-    topicLabel: String
+    topicLabel: String,
+    status: {
+        type: String,
+        enum: ["queued", "processing", "ready", "failed"],
+        default: "queued"
+    },
+    lastProcessingAt: Date,
+    processingAttempts: Number,
+    sourceFingerprint: String,
+    contentFingerprint: String,
+    duplicateOf:    {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "items",
+        default: null
+    }
+
 }, { timestamps: true })
 
 export const itemModel = mongoose.model("items", itemSchema)
