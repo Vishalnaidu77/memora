@@ -66,7 +66,14 @@ const itemSchema = new mongoose.Schema({
         default: "queued"
     },
     lastProcessingAt: Date,
-    processingAttempts: Number,
+    processingAttempts: {
+        type: Number,
+        default: 0
+    },
+    processingError: {
+        type: String,
+        default: null
+    },
     sourceFingerprint: String,
     contentFingerprint: String,
     duplicateOf:    {

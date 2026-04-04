@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import { itemModel } from "../models/item.model.js"
 import { fetchMatadata } from "../service/metadata.service.js";
-import { generateEmbedding, generateTags } from "../service/ai.service.js";
-import { getUserVectors, searchSimilar, storeVector } from "../service/qdrant.service.js";
+import { generateEmbedding } from "../service/ai.service.js";
+import { getUserVectors, searchSimilar } from "../service/qdrant.service.js";
 import { uploadFile } from "../service/supabse.service.js";
 import { randomUUID } from "crypto";
 import { extractTextFromImage, extractTextFromPdf } from "../service/file.processor.js";
@@ -12,6 +12,7 @@ import {
     buildSourceFingerprint,
     findExactDuplicate
 } from "../service/duplicate.service.js";
+import { enqueueItemEnrichment } from "../service/queue.service.js";
 
 export async function saveItemController(req, res) {
     try {
@@ -125,15 +126,16 @@ export async function saveItemController(req, res) {
             collectionId: collectionId || null,
             file: fileData,
             sourceFingerprint,
-            contentFingerprint
+            contentFingerprint,
+            status: "queued"
         })
 
-        await processWithAi(item._id, id, finalTitle, finalDescription, finalContent, resolvedContentType)
+        await enqueueItemEnrichment({ itemId: item._id, userId })
 
-        // Fetch the updated item with tags
-        const itemWithTags = await itemModel.findById(item._id)
-
-        res.status(201).json({ message: "Item saved", item: itemWithTags })
+        res.status(201).json({
+            message: "Item saved and queued for processing",
+            item
+        })
     } catch (err) {
         res.status(500).json({
             message: err.message
@@ -151,56 +153,6 @@ function resolveContentType(mimeType) {
     if (mimeType.startsWith('image/')) return 'image'
     if (mimeType.startsWith('video/')) return 'video'
     return 'file'
-}
-
-async function processWithAi(itemId, userId, title, description, content = '', contentType = 'other') {
-    try {
-        const text = [title, description, content].filter(Boolean).join('. ')
-
-        const [ tagsRaw, embeddings ] = await Promise.all([
-            generateTags(title, [description, content].filter(Boolean).join('. ')),
-            generateEmbedding(text)
-        ])
-
-        // Validate tags: must be array of strings
-        let tags = Array.isArray(tagsRaw) ? tagsRaw.filter(t => typeof t === 'string') : [];
-        if (!Array.isArray(tags) || tags.length === 0) {
-            console.error('Tags validation failed, got:', tagsRaw)
-            tags = [];
-            }
-
-        let qdrantId = null
-        if(embeddings){
-            try {
-                qdrantId = await storeVector(itemId, embeddings, {
-                    userId: userId.toString(),
-                    title: title,
-                    tags: tags,
-                    description,
-                    contentType,
-                }, userId)
-            } catch (qErr) {
-                console.error('Qdrant store failed (payload):', {
-                    itemId, embeddings, userId, title, tags
-                }, qErr.message)
-                throw qErr;
-            }
-        }
-
-        await itemModel.findByIdAndUpdate(
-            itemId,
-            { $set: 
-                { 
-                    tags: tags,
-                    chromaId: qdrantId
-                } 
-            },
-            { new: true }
-        )        
-
-    } catch (err) {
-        console.error(`AI processing failed:`, err.message)
-    }
 }
 
 export async function getItemsController(req, res) {
