@@ -2,6 +2,21 @@ import { userModel } from "../models/user.model.js"
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
+const isProduction = process.env.NODE_ENV === 'production'
+
+const authCookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+}
+
+const clearCookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax'
+}
+
 export async function registerController(req, res){
     const { name, email, password } = req.body
 
@@ -25,12 +40,7 @@ export async function registerController(req, res){
         id: user._id
     }, process.env.JWT_SECRET)
 
-    res.cookie("token", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    })
+    res.cookie("token", token, authCookieOptions)
 
     res.status(201).json({
         message: "User register successfully",
@@ -66,12 +76,7 @@ export async function loginController(req, res){
         id: userExist._id
     }, process.env.JWT_SECRET)
 
-    res.cookie("token", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    })
+    res.cookie("token", token, authCookieOptions)
 
     res.status(200).json({
         message: "User logged in successfully.",
@@ -104,11 +109,7 @@ export async function getMeController(req, res) {
 }
 
 export async function logoutController(req, res) {
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax'
-    })
+    res.clearCookie("token", clearCookieOptions)
 
     res.status(200).json({
         message: "User logged out successfully"
