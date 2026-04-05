@@ -1,13 +1,14 @@
 'use client'
 
 import Link from "next/link";
-import { use, useEffect, useMemo } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useTheme } from "../../../ThemeContext";
 import useItem from "../../../hooks/useItem";
 import { getBadge, getMeta, getRelativeSavedLabel } from "../../utils";
 import { MdDeleteOutline } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import ItemHighlightsSection from "../../../components/ItemHighlightsSection";
+import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 
 function DetailRow({ label, value, theme }) {
   if (!value) return null;
@@ -30,8 +31,10 @@ function DetailRow({ label, value, theme }) {
 export default function Page({ params }) {
   const { theme } = useTheme();
   const { allItems, handleGetItems, handleDeleteItem, loading } = useItem();
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const { id } = use(params)
+  const { id } = use(params);
 
   useEffect(() => {
     if (!allItems?.length) {
@@ -56,15 +59,19 @@ export default function Page({ params }) {
     item?.content ||
     item?.notes ||
     "";
-    
 
-    const router = useRouter()
+  const router = useRouter();
 
-  const handleDelete = async (e) => {
-    e.preventDefault()
-    await handleDeleteItem(item?._id)
-    router.push("/library")
-  }
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await handleDeleteItem(item?._id);
+      setDeleteModal(false);
+      router.push("/library");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (loading && !item) {
     return (
@@ -116,139 +123,150 @@ export default function Page({ params }) {
   }
 
   return (
-    <main
-      className="max-h-vh]"
-      style={{ backgroundColor: theme.background, color: theme.foreground }}
-    >
-      <section className="mx-auto px-6 py-10 md:px-8">
-        <div className="top-links flex items-center justify-between px-8">
-          <Link
-            href="/library"
-            className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
-            style={{ borderColor: theme.lowBorder, color: theme.muted }}
-          >
-            BACK TO LIBRARY
-          </Link>
-          <button 
-            className={`dlt-btn cursor-pointer text-2xl hover:text-red-600 duration-200`} 
-            onClick={handleDelete}>
-            <MdDeleteOutline  />
-          </button>
-        </div>
+    <>
+      <main
+        className="max-h-vh]"
+        style={{ backgroundColor: theme.background, color: theme.foreground }}
+      >
+        <section className="mx-auto px-6 py-10 md:px-8">
+          <div className="top-links flex items-center justify-between px-8">
+            <Link
+              href="/library"
+              className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
+              style={{ borderColor: theme.lowBorder, color: theme.muted }}
+            >
+              BACK TO LIBRARY
+            </Link>
+            <button
+              className="dlt-btn cursor-pointer text-2xl duration-200 hover:text-red-600"
+              onClick={() => setDeleteModal(true)}
+            >
+              <MdDeleteOutline />
+            </button>
+          </div>
 
-        <div className="mt-10 grid gap-10 md:flex grid-cols-[minmax(320px,420px),1fr]">
-          <div
-            className="overflow-hidden"
-            style={{ backgroundColor: theme.panelOuter, border: `1px solid ${theme.lowBorder}` }}
-          >
-            {imageSrc ? (
-              
+          <div className="mt-10 grid gap-10 md:flex grid-cols-[minmax(320px,420px),1fr]">
+            <div
+              className="overflow-hidden"
+              style={{ backgroundColor: theme.panelOuter, border: `1px solid ${theme.lowBorder}` }}
+            >
+              {imageSrc ? (
                 <img
                   src={imageSrc}
                   alt={item?.title || "Library item"}
                   className="h-full w-full object-cover"
                 />
-            ) : (
-              <div className="flex aspect-[0.78] items-center justify-center p-8 text-center">
+              ) : (
+                <div className="flex aspect-[0.78] items-center justify-center p-8 text-center">
+                  <div>
+                    <p className="text-[11px] tracking-[0.35em]" style={{ color: theme.muted }}>
+                      {getBadge(itemType)}
+                    </p>
+                    <p className="mt-4 text-base" style={{ color: theme.hint }}>
+                      No preview available for this item.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="text-[11px] tracking-[0.34em]" style={{ color: theme.muted }}>
+                {getRelativeSavedLabel(item)}
+              </p>
+
+              <h1
+                className="mt-5 text-[clamp(2.4rem,5vw,4.8rem)] font-black leading-[0.92] tracking-[-0.07em]"
+                style={{ color: theme.heading }}
+              >
+                {item?.title || "Untitled item"}
+              </h1>
+
+              <p className="mt-6 max-w-2xl text-base leading-8" style={{ color: theme.hint }}>
+                {detailText || "This item was saved to your library and is ready for review."}
+              </p>
+
+              <div
+                className="mt-8 grid gap-4 border-y py-6 text-sm md:grid-cols-2"
+                style={{ borderColor: theme.lowBorder }}
+              >
                 <div>
-                  <p className="text-[11px] tracking-[0.35em]" style={{ color: theme.muted }}>
+                  <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
+                    TYPE
+                  </p>
+                  <p className="mt-2 text-base" style={{ color: theme.foreground }}>
                     {getBadge(itemType)}
                   </p>
-                  <p className="mt-4 text-base" style={{ color: theme.hint }}>
-                    No preview available for this item.
+                </div>
+                <div>
+                  <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
+                    META
+                  </p>
+                  <p className="mt-2 text-base" style={{ color: theme.foreground }}>
+                    {getMeta(item)}
                   </p>
                 </div>
               </div>
-            )}
-          </div>
 
-          <div>
-            <p className="text-[11px] tracking-[0.34em]" style={{ color: theme.muted }}>
-              {getRelativeSavedLabel(item)}
-            </p>
+              <DetailRow label="Author" value={item?.author} theme={theme} />
+              <DetailRow label="Read Time" value={item?.readTime} theme={theme} />
+              <DetailRow label="Duration" value={item?.duration} theme={theme} />
+              <DetailRow label="Pages" value={item?.pages} theme={theme} />
 
-            <h1
-              className="mt-5 text-[clamp(2.4rem,5vw,4.8rem)] font-black leading-[0.92] tracking-[-0.07em]"
-              style={{ color: theme.heading }}
-            >
-              {item?.title || "Untitled item"}
-            </h1>
+              {externalUrl ? (
+                <div
+                  className="border-t py-5 md:grid md:grid-cols-[160px,1fr] md:items-start"
+                  style={{ borderColor: theme.lowBorder }}
+                >
+                  <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
+                    Source
+                  </p>
+                  <a
+                    href={externalUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all text-base underline underline-offset-4"
+                    style={{ color: theme.foreground }}
+                  >
+                    {externalUrl}
+                  </a>
+                </div>
+              ) : null}
 
-            <p className="mt-6 max-w-2xl text-base leading-8" style={{ color: theme.hint }}>
-              {detailText || "This item was saved to your library and is ready for review."}
-            </p>
-
-            <div
-              className="mt-8 grid gap-4 border-y py-6 text-sm md:grid-cols-2"
-              style={{ borderColor: theme.lowBorder }}
-            >
-              <div>
-                <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
-                  TYPE
-                </p>
-                <p className="mt-2 text-base" style={{ color: theme.foreground }}>
-                  {getBadge(itemType)}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
-                  META
-                </p>
-                <p className="mt-2 text-base" style={{ color: theme.foreground }}>
-                  {getMeta(item)}
-                </p>
-              </div>
+              {item?.file?.fileUrl ? (
+                <div
+                  className="border-t py-5 md:grid md:grid-cols-[160px,1fr] md:items-start"
+                  style={{ borderColor: theme.lowBorder }}
+                >
+                  <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
+                    File
+                  </p>
+                  <a
+                    href={item.file.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all text-base underline underline-offset-4"
+                    style={{ color: theme.foreground }}
+                  >
+                    Open saved file
+                  </a>
+                </div>
+              ) : null}
             </div>
-
-            <DetailRow label="Author" value={item?.author} theme={theme} />
-            <DetailRow label="Read Time" value={item?.readTime} theme={theme} />
-            <DetailRow label="Duration" value={item?.duration} theme={theme} />
-            <DetailRow label="Pages" value={item?.pages} theme={theme} />
-
-            {externalUrl ? (
-              <div
-                className="border-t py-5 md:grid md:grid-cols-[160px,1fr] md:items-start"
-                style={{ borderColor: theme.lowBorder }}
-              >
-                <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
-                  Source
-                </p>
-                <a
-                  href={externalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="break-all text-base underline underline-offset-4"
-                  style={{ color: theme.foreground }}
-                >
-                  {externalUrl}
-                </a>
-              </div>
-            ) : null}
-
-            {item?.file?.fileUrl ? (
-              <div
-                className="border-t py-5 md:grid md:grid-cols-[160px,1fr] md:items-start"
-                style={{ borderColor: theme.lowBorder }}
-              >
-                <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
-                  File
-                </p>
-                <a
-                  href={item.file.fileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="break-all text-base underline underline-offset-4"
-                  style={{ color: theme.foreground }}
-                >
-                  Open saved file
-                </a>
-              </div>
-            ) : null}
           </div>
-        </div>
 
-        <ItemHighlightsSection item={item} theme={theme} />
-      </section>
-    </main>
+          <ItemHighlightsSection item={item} theme={theme} />
+        </section>
+      </main>
+      <DeleteConfirmModal
+        theme={theme}
+        open={deleteModal}
+        title="Delete this item?"
+        message={`"${item?.title || "Untitled item"}" will be removed from your library.`}
+        onCancel={() => !isDeleting && setDeleteModal(false)}
+        onConfirm={handleDelete}
+        loading={isDeleting}
+      />
+    </>
   );
 }
