@@ -52,7 +52,7 @@ export default function Home() {
             </h1>
           </div>
 
-          <div className="max-w-sm lg:pb-6">
+          <div className="max-w-md lg:pb-6">
             <p
               className="text-base leading-7"
               style={{ color: theme.hint }}
@@ -61,17 +61,30 @@ export default function Home() {
               discovery is automatically filed into a neural network designed for instant retrieval.
             </p>
 
-            <Link
-              href={user ? "/library" : "/login"}
-              className="mt-10 inline-flex items-center justify-center border px-8 py-4 text-[11px] font-semibold tracking-[0.3em] transition-opacity hover:opacity-85"
-              style={{
-                borderColor: theme.foreground,
-                backgroundColor: theme.foreground,
-                color: theme.background,
-              }}
-            >
-              {user ? "ACCESS ARCHIVE" : "START ARCHIVE"}
-            </Link>
+            <div className="flex gap-2.5">
+              <Link
+                href={user ? "/library" : "/login"}
+                className="mt-10 inline-flex items-center justify-center border px-4 py-3 rounded text-[10px] font-semibold tracking-[0.15em] transition-opacity hover:opacity-85"
+                style={{
+                  borderColor: theme.foreground,
+                  backgroundColor: theme.foreground,
+                  color: theme.background,
+                }}
+              >
+                {user ? "ACCESS ARCHIVE" : "START ARCHIVE"}
+              </Link>
+              <Link
+                href={user ? "/library" : "/login"}
+                className="mt-10 inline-flex items-center justify-center border px-4 py-3 rounded text-[10px] font-semibold tracking-[0.15em] transition-opacity hover:opacity-85"
+                style={{
+                  borderColor: theme.foreground,
+                  backgroundColor: theme.foreground,
+                  color: theme.background,
+                }}
+              >
+                DOWNLOAD EXTENSION
+              </Link>
+            </div>
           </div>
         </div>
       </section>

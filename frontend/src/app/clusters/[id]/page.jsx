@@ -145,7 +145,7 @@ export default function Page({ params }) {
           </Link>
 
           <div
-            className="mt-10 flex min-h-[320px] flex-col items-center justify-center text-center"
+            className="mt-10 flex min-h-80 flex-col items-center justify-center text-center"
             style={{
               border: `1px dashed ${theme.lowBorder}`,
               backgroundColor: theme.panelInner,
@@ -165,9 +165,9 @@ export default function Page({ params }) {
 
   return (
     <>
-      <main style={{ backgroundColor: theme.background, color: theme.foreground }}>
-        <section className="mx-auto px-6 py-10 md:px-8">
-          <div className="flex items-center justify-between px-8">
+      <main className="min-h-[calc(100vh-81px)]" style={{ backgroundColor: theme.background, color: theme.foreground }}>
+        <section className="mx-auto max-w-400 px-6 py-10 md:px-8">
+          <div className="flex items-center justify-between">
             <Link
               href="/clusters"
               className="inline-flex border-b pb-2 text-[11px] font-semibold tracking-[0.24em]"
@@ -184,19 +184,24 @@ export default function Page({ params }) {
             </button>
           </div>
 
-          <div className="mt-10 grid gap-10 md:flex grid-cols-[minmax(320px,420px),1fr]">
+          <div className="mt-10 flex flex-col gap-10 lg:flex-row lg:items-start">
             <div
-              className="overflow-hidden"
+              className="overflow-hidden lg:sticky lg:top-24 lg:w-[40%] lg:shrink-0"
               style={{ backgroundColor: theme.panelOuter, border: `1px solid ${theme.lowBorder}` }}
             >
               {imageSrc ? (
-                <img
-                  src={imageSrc}
-                  alt={item?.title || "Cluster item"}
-                  className="h-full w-full object-cover"
-                />
+                <div
+                  className="flex min-h-80 items-center justify-center p-4 md:min-h-115"
+                  style={{ backgroundColor: theme.panelOuter }}
+                >
+                  <img
+                    src={imageSrc}
+                    alt={item?.title || "Cluster item"}
+                    className="max-h-[72vh] w-full object-contain"
+                  />
+                </div>
               ) : (
-                <div className="flex aspect-[0.78] items-center justify-center p-8 text-center">
+                <div className="flex min-h-80 items-center justify-center p-8 text-center md:min-h-115">
                   <div>
                     <p className="text-[11px] tracking-[0.35em]" style={{ color: theme.muted }}>
                       {getBadge(itemType)}
@@ -209,21 +214,23 @@ export default function Page({ params }) {
               )}
             </div>
 
-            <div>
+            <div className="min-w-0 lg:flex-1">
               <p className="text-[11px] tracking-[0.34em]" style={{ color: theme.muted }}>
                 {getRelativeSavedLabel(item)}
               </p>
 
               <h1
-                className="mt-5 text-[clamp(2.4rem,5vw,4.8rem)] font-black leading-[0.92] tracking-[-0.07em]"
+                className="mt-5 wrap-break-word text-[clamp(2rem,4.5vw,4.8rem)] font-black leading-[0.92] tracking-[-0.06em]"
                 style={{ color: theme.heading }}
               >
                 {item?.title || "Untitled item"}
               </h1>
 
-              <p className="mt-6 max-w-2xl text-base leading-8" style={{ color: theme.hint }}>
-                {detailText || "This item is part of one of your current topic clusters."}
-              </p>
+              <div className="mt-6 max-w-3xl max-h-75 overflow-y-auto pr-2">
+                <p className="wrap-break-word text-base leading-8" style={{ color: theme.hint }}>
+                  {detailText || "This item is part of one of your current topic clusters."}
+                </p>
+              </div>
 
               <div
                 className="mt-8 grid gap-4 border-y py-6 text-sm md:grid-cols-2"
