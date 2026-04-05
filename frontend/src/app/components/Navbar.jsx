@@ -94,7 +94,7 @@ export default function Navbar() {
           {user ? (
             <Button
               theme={theme}
-              variant="primary"
+              variant="secondary"
               className="px-6 py-2 text-[11px] tracking-[0.24em]"
               onClick={openAddItemModal}
             >
