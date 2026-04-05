@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useTheme } from "./ThemeContext";
@@ -32,6 +32,7 @@ export default function Home() {
   const { user } = useAuth()
   const pageRef = useRef(null)
   const containerRef = useRef(null)
+  const [showSetupGuide, setShowSetupGuide] = useState(false)
 
   useGSAP(
     () => {
@@ -92,11 +93,26 @@ export default function Home() {
 
       featureCardsEls.forEach((card) => {
         const onEnter = () => {
-          gsap.to(card, { y: -6, duration: 0.28, ease: "power2.out" })
+          gsap.to(card, {
+            y: -6,
+            scale: 0.99,
+            boxShadow:
+              theme.background === "#000000"
+                ? "0 16px 34px rgba(0,0,0,0.45)"
+                : "0 16px 34px rgba(0,0,0,0.14)",
+            duration: 0.28,
+            ease: "power2.out",
+          })
         }
 
         const onLeave = () => {
-          gsap.to(card, { y: 0, duration: 0.28, ease: "power2.out" })
+          gsap.to(card, {
+            y: 0,
+            scale: 1,
+            boxShadow: "none",
+            duration: 0.28,
+            ease: "power2.out",
+          })
         }
 
         card.addEventListener("mouseenter", onEnter)
@@ -230,18 +246,6 @@ export default function Home() {
               >
                 {user ? "ACCESS ARCHIVE" : "START ARCHIVE"}
               </Link>
-              <Link
-                data-gsap="hero-cta"
-                href="https://github.com/Vishalnaidu77/memora/releases/download/v1.0.0/extension.zip"
-                className="inline-flex items-center justify-center border px-4 py-3 rounded text-[10px] font-semibold tracking-[0.15em] transition-opacity hover:opacity-85"
-                style={{
-                  borderColor: theme.foreground,
-                  backgroundColor: theme.foreground,
-                  color: theme.background,
-                }}
-              >
-                DOWNLOAD EXTENSION
-              </Link>
             </div>
           </div>
         </div>
@@ -310,58 +314,87 @@ export default function Home() {
             ))}
           </div>
 
-          <article
-            className="mt-4 grid gap-8 overflow-hidden p-8 md:grid-cols-[minmax(0,1fr)_280px] md:p-12"
-            style={{
-              backgroundColor: theme.panelInner,
-              border: `1px solid ${theme.lowBorder}`,
-            }}
-          >
-            <div>
-              <p className="text-[10px] tracking-[0.32em]" style={{ color: theme.muted }}>
-                RESURFACING
-              </p>
-              <h3 className="mt-5 max-w-[11ch] text-[clamp(2rem,4vw,3.5rem)] font-black uppercase leading-[0.95] tracking-[-0.06em]">
-                SMART RESURFACING
-              </h3>
-              <p className="mt-6 max-w-[42ch] text-sm leading-7" style={{ color: theme.hint }}>
-                The right information at the exact moment of need. Memora isn&apos;t a graveyard for
-                links. It&apos;s a living memory.
-              </p>
-            </div>
-
-            <div
-              className="relative min-h-55 overflow-hidden"
+          <div className="mt-4">
+            <article
+              data-gsap="feature-card"
+              className="grid gap-8 overflow-hidden p-8 md:grid-cols-[minmax(0,1fr)_280px] md:p-12"
               style={{
-                background:
-                  theme.background === "#000000"
-                    ? "radial-gradient(circle at 50% 35%, rgba(255,255,255,0.16), transparent 16%), linear-gradient(180deg, #080808 0%, #020202 100%)"
-                    : "radial-gradient(circle at 50% 35%, rgba(0,0,0,0.16), transparent 16%), linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%)",
+                backgroundColor: theme.panelInner,
                 border: `1px solid ${theme.lowBorder}`,
               }}
             >
+              <div>
+                <p className="text-[10px] tracking-[0.32em]" style={{ color: theme.muted }}>
+                  BROWSER EXTENSION
+                </p>
+                <h3 className="mt-5 max-w-[11ch] text-[clamp(2rem,4vw,3.5rem)] font-black uppercase leading-[0.95] tracking-[-0.06em]">
+                  CAPTURE IN ONE CLICK
+                </h3>
+                <p className="mt-6 max-w-[42ch] text-sm leading-7" style={{ color: theme.hint }}>
+                  Save links, notes, and discoveries directly from your browser into Memora without breaking flow.
+                  Everything syncs to your archive instantly.
+                </p>
+
+                <div className="mt-8 flex flex-wrap items-center gap-2.5">
+                  <Link
+                    href="https://github.com/Vishalnaidu77/memora/releases/download/v1.0.0/extension.zip"
+                    className="inline-flex items-center justify-center border px-4 py-3 rounded text-[10px] font-semibold tracking-[0.15em] transition-opacity hover:opacity-85"
+                    style={{
+                      borderColor: theme.foreground,
+                      backgroundColor: theme.foreground,
+                      color: theme.background,
+                    }}
+                  >
+                    DOWNLOAD EXTENSION
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setShowSetupGuide(true)}
+                    className="inline-flex items-center justify-center cursor-pointer border px-4 py-3 rounded text-[10px] font-semibold tracking-[0.15em] transition-opacity hover:opacity-85"
+                    style={{
+                      borderColor: theme.lowBorder,
+                      backgroundColor: "transparent",
+                      color: theme.foreground,
+                    }}
+                  >
+                    SETUP GUIDE
+                  </button>
+                </div>
+              </div>
+
               <div
-                className="absolute left-1/2 top-[18%] h-[58%] w-[34%] -translate-x-1/2"
+                className="relative min-h-55 overflow-hidden"
                 style={{
                   background:
                     theme.background === "#000000"
-                      ? "linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0.03))"
-                      : "linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.05))",
-                  clipPath: "polygon(52% 0%, 70% 14%, 82% 48%, 58% 100%, 26% 80%, 18% 40%, 34% 8%)",
-                  filter: "blur(0.3px)",
+                      ? "radial-gradient(circle at 50% 35%, rgba(255,255,255,0.16), transparent 16%), linear-gradient(180deg, #080808 0%, #020202 100%)"
+                      : "radial-gradient(circle at 50% 35%, rgba(0,0,0,0.16), transparent 16%), linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%)",
+                  border: `1px solid ${theme.lowBorder}`,
                 }}
-              />
-              <div
-                className="absolute bottom-6 left-1/2 h-6 w-36 -translate-x-1/2 rounded-[999px]"
-                style={{
-                  background:
-                    theme.background === "#000000"
-                      ? "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)"
-                      : "radial-gradient(circle, rgba(0,0,0,0.18), transparent 70%)",
-                }}
-              />
-            </div>
-          </article>
+              >
+                <div
+                  className="absolute left-1/2 top-[18%] h-[58%] w-[34%] -translate-x-1/2"
+                  style={{
+                    background:
+                      theme.background === "#000000"
+                        ? "linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0.03))"
+                        : "linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.05))",
+                    clipPath: "polygon(52% 0%, 70% 14%, 82% 48%, 58% 100%, 26% 80%, 18% 40%, 34% 8%)",
+                    filter: "blur(0.3px)",
+                  }}
+                />
+                <div
+                  className="absolute bottom-6 left-1/2 h-6 w-36 -translate-x-1/2 rounded-[999px]"
+                  style={{
+                    background:
+                      theme.background === "#000000"
+                        ? "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)"
+                        : "radial-gradient(circle, rgba(0,0,0,0.18), transparent 70%)",
+                  }}
+                />
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -452,6 +485,53 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {showSetupGuide ? (
+        <div
+          className="fixed inset-0 z-80 flex items-center justify-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
+          onClick={() => setShowSetupGuide(false)}
+        >
+          <div
+            className="w-full max-w-xl border p-6 md:p-8"
+            style={{
+              backgroundColor: theme.panelOuter,
+              borderColor: theme.lowBorder,
+              color: theme.foreground,
+              boxShadow: `0 10px 30px ${theme.shadow}`,
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <h3 className="text-[clamp(1.4rem,3vw,2rem)] font-black uppercase tracking-[-0.04em]">
+                Setup Guide
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowSetupGuide(false)}
+                className="border px-3 py-1.5 text-[10px] font-semibold tracking-[0.2em]"
+                style={{ borderColor: theme.lowBorder, color: theme.muted }}
+              >
+                CLOSE
+              </button>
+            </div>
+
+            <p className="mt-6 text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
+              INSTALLATION STEPS
+            </p>
+
+            <ol className="mt-4 space-y-3 text-sm leading-7" style={{ color: theme.hint }}>
+              <li>1. Download and extract the ZIP file.</li>
+              <li>2. Open Chrome and go to chrome://extensions.</li>
+              <li>3. Enable Developer Mode (top right toggle).</li>
+              <li>4. Click "Load unpacked".</li>
+              <li>5. Select the extracted memora-extension folder.</li>
+              <li>6. Memora icon will appear in your toolbar.</li>
+              <li>7. Login to Memora first, then click the icon to save any page.</li>
+            </ol>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
