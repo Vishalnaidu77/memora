@@ -1,8 +1,9 @@
 'use client'
 
 import { ItemContext } from "../../context/ItemContext";
-import { useCallback, useContext, useEffect } from "react";
-import { deleteItem, generateClusters, getClusters, getItems, getResurfaceItems, knowledgeGraph, saveItem } from "../services/items.api";
+import { useCallback, useContext } from "react";
+import { createCollection, getCollections } from "../services/collections.api";
+import { deleteItem, generateClusters, getClusters, getItems, getResurfaceItems, knowledgeGraph, saveItem, updateItem } from "../services/items.api";
 
 const useItem = () => {
 
@@ -17,15 +18,17 @@ const useItem = () => {
         setResurfaceItems,
         clusterGroups,
         setClusterGroups, 
+        collections,
+        setCollections,
         graph, 
         setGraph
     } = useContext(ItemContext)
 
-    const handleSaveItem = async (url, file) =>{
+    const handleSaveItem = async (url, file, collectionId) =>{
         setLoading(true)
 
         try {
-            const res = await saveItem(url, file)
+            const res = await saveItem(url, file, collectionId)
             setItems(res.item ?? null)
             return res
         } catch(err){
@@ -108,6 +111,59 @@ const useItem = () => {
         }
     }
 
+    const handleGetCollections = async () => {
+        setLoading(true)
+
+        try {
+            const res = await getCollections()
+            setCollections(res.collections ?? [])
+            return res.collections ?? []
+        } catch (err) {
+            throw err
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleCreateCollection = async (payload) => {
+        setLoading(true)
+
+        try {
+            const res = await createCollection(payload)
+            setCollections((prev) => [res.collection, ...prev])
+            return res.collection
+        } catch (err) {
+            throw err
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleUpdateItem = async (itemId, payload) => {
+        setLoading(true)
+
+        try {
+            const res = await updateItem(itemId, payload)
+            const updatedItem = res.updatedItem ?? null
+
+            if (updatedItem) {
+                setAllItems((prev) =>
+                    prev.map((item) =>
+                        String(item?._id || item?.id) === String(updatedItem?._id || updatedItem?.id)
+                            ? updatedItem
+                            : item
+                    )
+                )
+            }
+
+            return updatedItem
+        } catch (err) {
+            throw err
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const handleKnowledgeGraph = useCallback(async () => {
         setLoading(true)
 
@@ -136,9 +192,13 @@ const useItem = () => {
         handleResurfaceItems,
         clusterGroups,
         setClusterGroups,
+        collections,
+        handleGetCollections,
+        handleCreateCollection,
         handleGetClusters,
         handleGenerateClusters,
         handleDeleteItem,
+        handleUpdateItem,
         graph,
         handleKnowledgeGraph
     }

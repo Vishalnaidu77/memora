@@ -1,87 +1,234 @@
+import mongoose from "mongoose"
 import { collectionModel } from "../models/collections.model.js"
+import { itemModel } from "../models/item.model.js"
 
-export async function createCollectionController(req, res){
-    const { name, description } = req.body
-
-    const collection = await collectionModel.create({
-        name,
-        description,
-    })
-
-    if(!collection){
-        return res.status(400).json({
-            message: "Fields cannot be empty"
-        })
-    }
-
-    res.status(200).json({
-        message: "Create collection successfully",
-        collection
-    })
+function getUserId(req) {
+    return req?.user?.id ? new mongoose.Types.ObjectId(req.user.id) : null
 }
 
-
-export async function getCollectionController(req, res){
-    const collections = await collectionModel.find()
-
-    if(!collections){
-        return res.status(400).json({
-            message: "There is no collections, please create one"
-        })
-    }
-
-    res.status(200).json({
-        message: "Collection fetched",
-        collections
-    })
+function buildCountMap(rows) {
+    return rows.reduce((map, row) => {
+        map.set(String(row._id), row.count)
+        return map
+    }, new Map())
 }
 
-export async function getSingleCollectionController(req, res){
-    const collectionId = req.params.collectionId
-    const collection = await collectionModel.findOne({ _id: collectionId })
+export async function createCollectionController(req, res) {
+    try {
+        const userId = getUserId(req)
+        const { name, description, color, icon } = req.body
+        const normalizedName = String(name || "").trim()
 
-    console.log(collectionId);
+        if (!userId) {
+            return res.status(401).json({
+                message: "Unauthorized user"
+            })
+        }
 
-    if(!collection){
-        return res.status(404).json({
-            message: "Collection not found"
+        if (!normalizedName) {
+            return res.status(400).json({
+                message: "Collection name is required"
+            })
+        }
+
+        const collection = await collectionModel.create({
+            userId,
+            name: normalizedName,
+            description: String(description || "").trim(),
+            color: color || "#3B82F6",
+            icon: icon || ""
+        })
+
+        res.status(201).json({
+            message: "Create collection successfully",
+            collection: {
+                ...collection.toObject(),
+                itemCount: 0
+            }
+        })
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
         })
     }
+}
 
-    res.status(200).json({
-        message: `Collection ${collectionId} fetched`,
-        collection
-    })
+export async function getCollectionController(req, res) {
+    try {
+        const userId = getUserId(req)
+
+        if (!userId) {
+            return res.status(401).json({
+                message: "Unauthorized user"
+            })
+        }
+
+        const [collections, collectionCounts] = await Promise.all([
+            collectionModel.find({ userId }).sort({ createdAt: -1 }).lean(),
+            itemModel.aggregate([
+                {
+                    $match: {
+                        userId,
+                        collectionId: { $ne: null }
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$collectionId",
+                        count: { $sum: 1 }
+                    }
+                }
+            ])
+        ])
+
+        const countMap = buildCountMap(collectionCounts)
+        const hydratedCollections = collections.map((collection) => ({
+            ...collection,
+            itemCount: countMap.get(String(collection._id)) || 0
+        }))
+
+        res.status(200).json({
+            message: "Collection fetched",
+            collections: hydratedCollections
+        })
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        })
+    }
+}
+
+export async function getSingleCollectionController(req, res) {
+    try {
+        const userId = getUserId(req)
+        const collectionId = req.params.collectionId
+
+        if (!userId) {
+            return res.status(401).json({
+                message: "Unauthorized user"
+            })
+        }
+
+        const collection = await collectionModel.findOne({ _id: collectionId, userId }).lean()
+
+        if (!collection) {
+            return res.status(404).json({
+                message: "Collection not found"
+            })
+        }
+
+        const items = await itemModel.find({ userId, collectionId }).sort({ createdAt: -1 })
+
+        res.status(200).json({
+            message: `Collection ${collectionId} fetched`,
+            collection: {
+                ...collection,
+                items,
+                itemCount: items.length
+            }
+        })
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        })
+    }
 }
 
 export async function updateCollectionController(req, res) {
-    const { name, description } = req.body
-    const collectionId = req.params.collectionId
+    try {
+        const userId = getUserId(req)
+        const collectionId = req.params.collectionId
+        const { name, description, color, icon } = req.body
+        const updates = {}
 
-    const collection = await collectionModel.findOne({ _id: collectionId })
+        if (!userId) {
+            return res.status(401).json({
+                message: "Unauthorized user"
+            })
+        }
 
-    if(!collection){
-        return res.status(404).json({
-            message: "Collection not found"
+        if (Object.prototype.hasOwnProperty.call(req.body, "name")) {
+            const normalizedName = String(name || "").trim()
+
+            if (!normalizedName) {
+                return res.status(400).json({
+                    message: "Collection name is required"
+                })
+            }
+
+            updates.name = normalizedName
+        }
+
+        if (Object.prototype.hasOwnProperty.call(req.body, "description")) {
+            updates.description = String(description || "").trim()
+        }
+
+        if (Object.prototype.hasOwnProperty.call(req.body, "color")) {
+            updates.color = color || "#3B82F6"
+        }
+
+        if (Object.prototype.hasOwnProperty.call(req.body, "icon")) {
+            updates.icon = icon || ""
+        }
+
+        const collection = await collectionModel.findOneAndUpdate(
+            { _id: collectionId, userId },
+            updates,
+            { new: true }
+        ).lean()
+
+        if (!collection) {
+            return res.status(404).json({
+                message: "Collection not found"
+            })
+        }
+
+        const itemCount = await itemModel.countDocuments({ userId, collectionId })
+
+        res.status(200).json({
+            message: "Collection Updated",
+            collection: {
+                ...collection,
+                itemCount
+            }
+        })
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
         })
     }
-
-    await collectionModel.findByIdAndUpdate(collectionId, {
-        name: name,
-        description: description
-    })
-
-    res.status(200).json({
-        message: "Collection Updated",
-        collection
-    })
 }
 
 export async function deleteCollectionController(req, res) {
-    const collectionId = req.params.collectionId
-    await collectionModel.findOneAndDelete({collectionId})
+    try {
+        const userId = getUserId(req)
+        const collectionId = req.params.collectionId
 
-    res.status(200).json({
-        message: "Collection deleted"
-    })
+        if (!userId) {
+            return res.status(401).json({
+                message: "Unauthorized user"
+            })
+        }
+
+        const collection = await collectionModel.findOneAndDelete({ _id: collectionId, userId })
+
+        if (!collection) {
+            return res.status(404).json({
+                message: "Collection not found"
+            })
+        }
+
+        await itemModel.updateMany(
+            { userId, collectionId: collection._id },
+            { $set: { collectionId: null } }
+        )
+
+        res.status(200).json({
+            message: "Collection deleted"
+        })
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        })
+    }
 }

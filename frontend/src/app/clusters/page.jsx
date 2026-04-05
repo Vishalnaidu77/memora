@@ -1,28 +1,55 @@
 'use client'
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Button from "../components/Button";
 import { useTheme } from "../ThemeContext";
 import useItem from "../hooks/useItem";
-import ClusterItemCard from "./components/ClusterItemCard";
+import CreateCollectionModal from "../library/components/CreateCollectionModal";
+import ClusterGroupCard from "./components/ClusterGroupCard";
 
 const CollectionPage = () => {
+  const router = useRouter();
   const { theme } = useTheme();
-  const { clusterGroups, handleGenerateClusters, handleGetClusters, loading } = useItem();
+  const {
+    clusterGroups,
+    collections,
+    handleGenerateClusters,
+    handleGetClusters,
+    handleGetCollections,
+    loading,
+  } = useItem();
   const [error, setError] = useState("");
+  const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+  const initialLoadRef = useRef(false);
 
   useEffect(() => {
+    if (initialLoadRef.current) return;
+
+    initialLoadRef.current = true;
+
     const loadClusters = async () => {
       try {
         setError("");
-        await handleGetClusters();
+        await Promise.allSettled([handleGetClusters(), handleGetCollections()]);
       } catch (err) {
         setError(err?.response?.data?.message || "Failed to load clusters.");
       }
     };
 
     loadClusters();
-  }, []);
+  }, [handleGetClusters, handleGetCollections]);
+
+  useEffect(() => {
+    if (!toast) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setToast(null);
+    }, 3200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [toast]);
 
   const onRefreshClusters = async () => {
     try {
@@ -32,6 +59,18 @@ const CollectionPage = () => {
       setError(err?.response?.data?.message || "Failed to generate clusters.");
     }
   };
+
+  const handleCollectionCreated = (collection) => {
+    if (!collection?._id) return;
+
+    setToast({
+      title: "Cluster created",
+      message: `"${collection.name}" is ready for manual organization.`,
+    });
+  };
+
+  const customClusters = useMemo(() => collections.filter(Boolean), [collections]);
+  const aiClusters = useMemo(() => clusterGroups.filter((cluster) => (cluster?.count || 0) >= 2), [clusterGroups]);
 
   return (
     <main
@@ -47,44 +86,27 @@ const CollectionPage = () => {
             <h1 className="mt-6 text-[clamp(4rem,9vw,6.8rem)] font-black leading-[0.9] tracking-[-0.08em]">
               CLUSTERS
             </h1>
-            <p className="mt-8 max-w-2xl text-base leading-8" style={{ color: theme.hint }}>
-              Memora groups related saved objects into topic shelves using embeddings, DBSCAN,
-              and AI-generated topic labels. Refresh the map whenever you want a new read of your archive.
-            </p>
           </div>
+        </div>
 
-          <aside
-            className="min-w-0 overflow-hidden p-8 sm:p-10"
+        {toast ? (
+          <div
+            className="fixed right-6 top-60 z-50 w-[min(92vw,360px)] border px-4 py-3"
             style={{
               backgroundColor: theme.panelOuter,
               color: theme.foreground,
-              border: `1px solid ${theme.lowBorder}`,
+              borderColor: theme.lowBorder,
+              boxShadow: `0 24px 80px ${theme.shadow}`,
             }}
           >
-            <p className="text-[11px] tracking-[0.42em]" style={{ color: theme.muted }}>
-              TOPIC SIGNAL
+            <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
+              {toast.title}
             </p>
-            <h2 className="mt-6 max-w-[11ch] text-[clamp(2.2rem,3vw,3.35rem)] font-black leading-[1.02] tracking-[-0.06em] break-words">
-              {clusterGroups.length
-                ? `${clusterGroups.length} topic groups are active.`
-                : "Your archive is ready for its first cluster pass."}
-            </h2>
-            <p className="mt-8 max-w-[28ch] text-[1.05rem] leading-8" style={{ color: theme.hint }}>
-              Clusters reveal the themes hidden across your saved items so the archive feels organized by meaning, not only by date.
+            <p className="mt-2 text-sm leading-6" style={{ color: theme.hint }}>
+              {toast.message}
             </p>
-            <div className="mt-8">
-              <Button
-                onClick={onRefreshClusters}
-                theme={theme}
-                variant="secondary"
-                disabled={loading}
-                className="w-full py-3 text-[11px] font-bold tracking-[0.28em]"
-              >
-                {loading ? "MAPPING TOPICS..." : "REFRESH CLUSTERS"}
-              </Button>
-            </div>
-          </aside>
-        </div>
+          </div>
+        ) : null}
 
         {error ? (
           <div
@@ -99,62 +121,101 @@ const CollectionPage = () => {
           </div>
         ) : null}
 
-        <div className="mt-20 space-y-20">
-          {loading && !clusterGroups.length ? (
-            <div className="py-24 text-[11px] tracking-[0.35em]" style={{ color: theme.muted }}>
-              LOADING CLUSTERS...
+        <section className="mt-16 border-y py-8" style={{ borderColor: theme.lowBorder }}>
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[11px] tracking-[0.34em]" style={{ color: theme.muted }}>
+                YOUR CLUSTERS
+              </p>
+              <h2
+                className="mt-4 text-[clamp(1rem,3vw,2rem)] font-black leading-[0.96] tracking-[-0.06em]"
+                style={{ color: theme.heading }}
+              >
+                Manual clusters you control.
+              </h2>
             </div>
-          ) : clusterGroups.length ? (
-            clusterGroups.map((cluster, clusterIndex) => (
-              <section key={cluster.clusterId}>
-                <div
-                  className="flex flex-col gap-6 border-b pb-8 md:flex-row md:items-end md:justify-between"
-                  style={{ borderColor: theme.lowBorder }}
-                >
-                  <div>
-                    <p className="text-[11px] tracking-[0.34em]" style={{ color: theme.muted }}>
-                      TOPIC {String(clusterIndex + 1).padStart(2, "0")}
-                    </p>
-                    <h2
-                      className="mt-4 text-[clamp(2.2rem,4vw,3.6rem)] font-black leading-[0.95] tracking-[-0.07em]"
-                      style={{ color: theme.heading }}
-                    >
-                      {cluster.topicLabel}
-                    </h2>
-                  </div>
-                  <p className="text-[11px] tracking-[0.32em]" style={{ color: theme.muted }}>
-                    {cluster.count} SAVED OBJECT{cluster.count === 1 ? "" : "S"}
-                  </p>
-                </div>
+          </div>
 
-                <div className="mt-10 grid gap-x-10 gap-y-16 md:grid-cols-2 2xl:grid-cols-4">
-                  {cluster.items.map((item, itemIndex) => (
-                    <ClusterItemCard
-                      key={item?._id || `${cluster.clusterId}-${itemIndex}`}
-                      item={item}
-                      index={itemIndex}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))
-          ) : (
-            <div
-              className="flex min-h-[320px] flex-col items-center justify-center text-center"
-              style={{
-                border: `1px dashed ${theme.lowBorder}`,
-                backgroundColor: theme.panelInner,
-              }}
-            >
-              <p className="text-[11px] tracking-[0.42em]" style={{ color: theme.muted }}>
-                NO CLUSTERS YET
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {customClusters.length ? (
+              customClusters.map((collection) => (
+                <ClusterGroupCard
+                  key={collection?._id}
+                  eyebrow="CUSTOM CLUSTER"
+                  title={collection?.name}
+                  description={collection?.description || "Manual cluster ready for your saved items."}
+                  onClick={() => router.push(`/clusters/custom/${collection?._id}`)}
+                  theme={theme}
+                />
+              ))
+            ) : (
+              <div
+                className="md:col-span-2 xl:col-span-3 flex min-h-[220px] flex-col items-center justify-center text-center"
+                style={{
+                  border: `1px dashed ${theme.lowBorder}`,
+                  backgroundColor: theme.panelInner,
+                }}
+              >
+                <p className="text-[11px] tracking-[0.42em]" style={{ color: theme.muted }}>
+                  NO CUSTOM CLUSTERS YET
+                </p>
+                <p className="mt-4 max-w-md text-base" style={{ color: theme.hint }}>
+                  Create a manual cluster here, then assign items to it from the library save flow or item detail screen.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mt-20">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[11px] tracking-[0.34em]" style={{ color: theme.muted }}>
+                AI CLUSTERS
               </p>
-              <p className="mt-4 max-w-md text-base" style={{ color: theme.hint }}>
-                Save a few related items, then run cluster refresh to generate topic groups for your archive.
-              </p>
+              <h2
+                className="mt-4 text-[clamp(1rem,3vw,2rem)] font-black leading-[0.96] tracking-[-0.06em]"
+                style={{ color: theme.heading }}
+              >
+                Related clusters generated by Memora.
+              </h2>
             </div>
-          )}
-        </div>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {loading && !aiClusters.length ? (
+              <div className="py-24 text-[11px] tracking-[0.35em]" style={{ color: theme.muted }}>
+                LOADING AI CLUSTERS...
+              </div>
+            ) : aiClusters.length ? (
+              aiClusters.map((cluster, clusterIndex) => (
+                <ClusterGroupCard
+                  key={cluster.clusterId}
+                  eyebrow={`AI TOPIC ${String(clusterIndex + 1).padStart(2, "0")}`}
+                  title={cluster.topicLabel}
+                  description={`Open this topic cluster to view ${cluster.count} saved item${cluster.count === 1 ? "" : "s"} related to each other.`}
+                  onClick={() => router.push(`/clusters/ai/${cluster.clusterId}`)}
+                  theme={theme}
+                />
+              ))
+            ) : (
+              <div
+                className="md:col-span-2 xl:col-span-3 flex min-h-[220px] flex-col items-center justify-center text-center"
+                style={{
+                  border: `1px dashed ${theme.lowBorder}`,
+                  backgroundColor: theme.panelInner,
+                }}
+              >
+                <p className="text-[11px] tracking-[0.42em]" style={{ color: theme.muted }}>
+                  NO AI CLUSTERS YET
+                </p>
+                <p className="mt-4 max-w-md text-base" style={{ color: theme.hint }}>
+                  Save at least two related items, then run refresh so AI can group them into a topic cluster.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
 
         <footer
           className="mt-24 border-t pt-8 text-[11px] tracking-[0.32em]"
@@ -162,6 +223,12 @@ const CollectionPage = () => {
         >
           2024 MEMORA. ALL RIGHTS RESERVED.
         </footer>
+
+        <CreateCollectionModal
+          open={createCollectionOpen}
+          onClose={() => setCreateCollectionOpen(false)}
+          onCreated={handleCollectionCreated}
+        />
       </section>
     </main>
   )

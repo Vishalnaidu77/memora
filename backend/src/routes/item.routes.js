@@ -1,6 +1,6 @@
 import express from 'express'
 import multer from 'multer'
-import { addHighlightController, clusterTopicsController, deleteItemsController, getClustersController, getGraphDataController, getItemsController, relatedItemsController, resurfaceController, saveItemController, searchItemsController, updateItemsController } from '../controllers/item.controller.js'
+import { addHighlightController, clusterTopicsController, deleteItemsController, getClustersController, getGraphDataController, getItemsController, getSingleClusterController, relatedItemsController, resurfaceController, saveItemController, searchItemsController, updateItemsController } from '../controllers/item.controller.js'
 import { identifyUser } from '../middleware/auth.middleware.js'
 
 const itemRouter = express.Router()
@@ -13,7 +13,7 @@ itemRouter.post("/save", identifyUser, upload.single("file"), saveItemController
 itemRouter.get("/get-item", identifyUser, getItemsController)
 
 // PATCH /api/item/update/:itemId
-itemRouter.patch("/update/:itemId", updateItemsController)
+itemRouter.patch("/update/:itemId", identifyUser, updateItemsController)
 
 // DELETE /api/item/delete/:itemId
 itemRouter.delete("/delete/:itemId", identifyUser, deleteItemsController)
@@ -32,6 +32,7 @@ itemRouter.get("/resurface", identifyUser, resurfaceController)
 
 // Clusters /api/item/clusters
 itemRouter.get("/clusters", identifyUser, getClustersController)
+itemRouter.get("/clusters/:clusterId", identifyUser, getSingleClusterController)
 
 // Topic cluster api/item/cluster-topics
 itemRouter.post("/cluster-topics", identifyUser, clusterTopicsController)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "../ThemeContext";
 import DashboardHero from "./components/DashboardHero";
 import ItemCard from "./components/ItemCard";
@@ -9,18 +9,23 @@ import FormContainer from "./components/FormContainer";
 
 export default function DashboardPage() {
   const { theme } = useTheme();
-  const { allItems, handleGetItems, loading } = useItem();
+  const { allItems, handleGetCollections, handleGetItems, loading } = useItem();
   const [filter, setFilter] = useState("ALL OBJECTS");
   const [ addItemToggle, setAddItemToggle ] = useState(false)
   const [toast, setToast] = useState(null)
+  const initialLoadRef = useRef(false)
 
   useEffect(() => {
+     if (initialLoadRef.current) return
+
+     initialLoadRef.current = true
+
      const renderItems = async () => {
-      await handleGetItems()
+      await Promise.allSettled([handleGetItems(), handleGetCollections()])
      }
 
      renderItems()
-  }, []);
+  }, [handleGetCollections, handleGetItems]);
 
   useEffect(() => {
     if (!toast) return;
@@ -35,13 +40,12 @@ export default function DashboardPage() {
   const items = useMemo(() => allItems.filter(Boolean), [allItems]);
 
   const filteredItems = useMemo(() => {
-    if (filter === "ALL OBJECTS") return items;
     return items.filter((item) => {
       const itemType = item?.contentType || item?.type;
       const normalizedItemType = itemType === "twitter" ? "tweet" : itemType;
       const normalizedFilter = filter === "twitter" ? "tweet" : filter;
 
-      return normalizedItemType === normalizedFilter;
+      return filter === "ALL OBJECTS" ? true : normalizedItemType === normalizedFilter;
     });
   }, [filter, items]);
 
@@ -52,8 +56,10 @@ export default function DashboardPage() {
     if (!result?.duplicate) return;
 
     setToast({
-      title: "Already saved",
-      message: "This item is already in your library.",
+      title: result?.message?.includes("assigned to custom cluster") ? "Assigned to cluster" : "Already saved",
+      message: result?.message?.includes("assigned to custom cluster")
+        ? "The existing item was linked to your selected custom cluster."
+        : "This item is already in your library.",
     });
   };
 

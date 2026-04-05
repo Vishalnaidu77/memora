@@ -85,7 +85,7 @@ const itemSchema = new mongoose.Schema({
 
     collectionId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "collection"
+        ref: "collections"
     },
 
     // Resurfacing 

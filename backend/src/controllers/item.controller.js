@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { itemModel } from "../models/item.model.js"
+import { collectionModel } from "../models/collections.model.js";
 import { fetchMatadata } from "../service/metadata.service.js";
 import { generateEmbedding } from "../service/ai.service.js";
 import { getUserVectors, searchSimilar } from "../service/qdrant.service.js";
@@ -22,6 +23,7 @@ const GRAPH_CANDIDATE_SCORE_THRESHOLD = 0.56
 const GRAPH_RECIPROCAL_EDGE_SCORE_THRESHOLD = 0.67
 const GRAPH_STRONG_EDGE_SCORE_THRESHOLD = 0.82
 const GRAPH_EDGE_LIMIT = 6
+const MIN_TOPIC_CLUSTER_SIZE = 2
 const GRAPH_STOP_WORDS = new Set([
     "a",
     "an",
@@ -154,9 +156,31 @@ export async function saveItemController(req, res) {
             sourceFingerprint
         })
 
+        let resolvedCollectionId = null
+
+        if (collectionId) {
+            const collection = await collectionModel.findOne({
+                _id: collectionId,
+                userId
+            })
+
+            if (!collection) {
+                return res.status(404).json({
+                    message: "Custom cluster not found"
+                })
+            }
+
+            resolvedCollectionId = collection._id
+        }
+
         if (sourceDuplicate) {
+            if (resolvedCollectionId && String(sourceDuplicate.collectionId || "") !== String(resolvedCollectionId)) {
+                sourceDuplicate.collectionId = resolvedCollectionId
+                await sourceDuplicate.save()
+            }
+
             return res.status(200).json({
-                message: "Item already saved",
+                message: resolvedCollectionId ? "Item already saved and assigned to custom cluster" : "Item already saved",
                 item: sourceDuplicate,
                 duplicate: true
             })
@@ -227,8 +251,13 @@ export async function saveItemController(req, res) {
         })
 
         if (contentDuplicate) {
+            if (resolvedCollectionId && String(contentDuplicate.collectionId || "") !== String(resolvedCollectionId)) {
+                contentDuplicate.collectionId = resolvedCollectionId
+                await contentDuplicate.save()
+            }
+
             return res.status(200).json({
-                message: "Item already saved",
+                message: resolvedCollectionId ? "Item already saved and assigned to custom cluster" : "Item already saved",
                 item: contentDuplicate,
                 duplicate: true
             })
@@ -244,7 +273,7 @@ export async function saveItemController(req, res) {
             siteName: meta.siteName || '',
             content: finalContent,
             contentType: resolvedContentType,
-            collectionId: collectionId || null,
+            collectionId: resolvedCollectionId,
             file: fileData,
             sourceFingerprint,
             contentFingerprint,
@@ -537,9 +566,10 @@ export async function getItemsController(req, res) {
 
 export async function updateItemsController(req, res) {
     try {
-        const { title, description, tags } = req.body
+        const { title, description, tags, collectionId } = req.body
         const itemId = req.params.itemId
         const userId = new mongoose.Types.ObjectId(req.user.id)
+        const updates = {}
 
         const item = await itemModel.findOne({ _id: itemId, userId })
         
@@ -547,9 +577,40 @@ export async function updateItemsController(req, res) {
             return res.status(404).json({ message: "Item not found" })
         }
 
+        if (Object.prototype.hasOwnProperty.call(req.body, "title")) {
+            updates.title = title
+        }
+
+        if (Object.prototype.hasOwnProperty.call(req.body, "description")) {
+            updates.description = description
+        }
+
+        if (Object.prototype.hasOwnProperty.call(req.body, "tags")) {
+            updates.tags = tags
+        }
+
+        if (Object.prototype.hasOwnProperty.call(req.body, "collectionId")) {
+            if (!collectionId) {
+                updates.collectionId = null
+            } else {
+                const collection = await collectionModel.findOne({
+                    _id: collectionId,
+                    userId
+                })
+
+                if (!collection) {
+                    return res.status(404).json({
+                        message: "Custom cluster not found"
+                    })
+                }
+
+                updates.collectionId = collection._id
+            }
+        }
+
         const updatedItem = await itemModel.findByIdAndUpdate(
             itemId,
-            { title, description, tags },
+            updates,
             { new: true }
         )
 
@@ -716,6 +777,34 @@ export async function resurfaceController(req, res) {
     })
 }
 
+function buildTopicClusters(items) {
+    const groupedMap = new Map()
+
+    for (const item of items) {
+        const clusterId = item.topicClusterId
+        const topicLabel = item.topicLabel || 'General'
+
+        if (!clusterId) continue
+
+        if (!groupedMap.has(clusterId)) {
+            groupedMap.set(clusterId, {
+                clusterId,
+                topicLabel,
+                count: 0,
+                items: []
+            })
+        }
+
+        const cluster = groupedMap.get(clusterId)
+        cluster.items.push(item)
+        cluster.count += 1
+    }
+
+    return [...groupedMap.values()]
+        .filter((cluster) => cluster.count >= MIN_TOPIC_CLUSTER_SIZE)
+        .sort((left, right) => right.count - left.count)
+}
+
 export async function getClustersController(req, res) {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.id)
@@ -723,34 +812,41 @@ export async function getClustersController(req, res) {
             userId,
             topicClusterId: { $exists: true, $ne: null }
         }).sort({ createdAt: -1 })
-
-        const groupedMap = new Map()
-
-        for (const item of items) {
-            const clusterId = item.topicClusterId
-            const topicLabel = item.topicLabel || 'General'
-
-            if (!clusterId) continue
-
-            if (!groupedMap.has(clusterId)) {
-                groupedMap.set(clusterId, {
-                    clusterId,
-                    topicLabel,
-                    count: 0,
-                    items: []
-                })
-            }
-
-            const cluster = groupedMap.get(clusterId)
-            cluster.items.push(item)
-            cluster.count += 1
-        }
-
-        const clusters = [...groupedMap.values()].sort((left, right) => right.count - left.count)
+        const clusters = buildTopicClusters(items)
 
         res.status(200).json({
             message: "Clusters fetched successfully",
             clusters
+        })
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        })
+    }
+}
+
+export async function getSingleClusterController(req, res) {
+    try {
+        const userId = new mongoose.Types.ObjectId(req.user.id)
+        const { clusterId } = req.params
+        const items = await itemModel.find({
+            userId,
+            topicClusterId: clusterId
+        }).sort({ createdAt: -1 })
+
+        const cluster = buildTopicClusters(items).find(
+            (entry) => String(entry.clusterId) === String(clusterId)
+        )
+
+        if (!cluster) {
+            return res.status(404).json({
+                message: "Cluster not found"
+            })
+        }
+
+        res.status(200).json({
+            message: "Cluster fetched successfully",
+            cluster
         })
     } catch (err) {
         res.status(500).json({

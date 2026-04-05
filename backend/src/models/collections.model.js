@@ -2,14 +2,19 @@ import mongoose from "mongoose";
 
 const collectionSchema = new mongoose.Schema({
     userId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
         required: true
     },
     name: {
         type: String,
-        require: true
+        required: true,
+        trim: true
     },
-    description: String,
+    description: {
+        type: String,
+        default: ""
+    },
     color: {
         type: String,
         default: "#3B82F6"
@@ -20,5 +25,7 @@ const collectionSchema = new mongoose.Schema({
         default: Date.now
     }
 }, { timestamps: true })
+
+collectionSchema.index({ userId: 1, name: 1 })
 
 export const collectionModel = mongoose.model("collections", collectionSchema)

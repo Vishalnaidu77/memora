@@ -116,7 +116,8 @@ export const clusterUserTopics = async (userId) => {
     }
 
     const { clusters: groupedPoints, unclusteredItemIds } = buildDbscanClusters(points)
-    const clusters = await Promise.all(groupedPoints.map(async (clusterPoints, index) => {
+    const validGroupedPoints = groupedPoints.filter(clusterPoints => clusterPoints.length >= DBSCAN_MIN_POINTS)
+    const clusters = await Promise.all(validGroupedPoints.map(async (clusterPoints, index) => {
         const aiLabel = await generateTopicLabel(clusterPoints)
 
         return {

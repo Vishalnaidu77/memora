@@ -13,13 +13,13 @@ function PlaceholderArtwork({ index, badge, theme, item }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
-  const { handleDeleteItem, handleGetItems } = useItem();
+  const { handleDeleteItem, handleGetCollections, handleGetItems } = useItem();
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
       await handleDeleteItem(item._id);
-      await handleGetItems();
+      await Promise.allSettled([handleGetItems(), handleGetCollections()]);
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);
@@ -98,13 +98,13 @@ export default function ItemCard({ item, index }) {
   const [isHover, setIsHover] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { handleDeleteItem, handleGetItems } = useItem();
+  const { handleDeleteItem, handleGetCollections, handleGetItems } = useItem();
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
       await handleDeleteItem(item._id);
-      await handleGetItems();
+      await Promise.allSettled([handleGetItems(), handleGetCollections()]);
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);

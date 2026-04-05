@@ -10,6 +10,7 @@ const ItemProvider = ({ children }) => {
     const [allItems, setAllItems] = useState([])
     const [resurfaceItems, setResurfaceItems] = useState([])
     const [clusterGroups, setClusterGroups] = useState([])
+    const [collections, setCollections] = useState([])
     const [ graph, setGraph ] = useState(null)
 
     return(
@@ -24,6 +25,8 @@ const ItemProvider = ({ children }) => {
             setResurfaceItems,
             clusterGroups,
             setClusterGroups,
+            collections,
+            setCollections,
             graph,
             setGraph
         }}>

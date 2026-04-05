@@ -1,6 +1,7 @@
 'use client'
 
 import Button from '../../components/Button';
+import SelectInput from '../../components/SelectInput';
 import { useTheme } from '../../ThemeContext';
 import TextInput from '../../components/TextInput'
 import React, { useState } from 'react'
@@ -11,18 +12,20 @@ const FormContainer = ({ setAddItemToggle, onSaveResult }) => {
 
     const [ url, setUrl] = useState("")
     const [ file, setFile ] = useState(null)
+    const [ collectionId, setCollectionId ] = useState("")
 
     const { theme } = useTheme();
-    const { loading, handleGetItems, handleSaveItem } = useItem()
+    const { collections, loading, handleGetCollections, handleGetItems, handleSaveItem } = useItem()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        const result = await handleSaveItem(url, file);
-        await handleGetItems()
+        const result = await handleSaveItem(url, file, collectionId || null);
+        await Promise.allSettled([handleGetItems(), handleGetCollections()])
         onSaveResult?.(result)
         setUrl("")
         setFile(null)
+        setCollectionId("")
         setAddItemToggle(false)
     }
 
@@ -92,6 +95,20 @@ const FormContainer = ({ setAddItemToggle, onSaveResult }) => {
                     placeholder="Enter url"
                     theme={theme}   
                     />
+                <SelectInput
+                    id="collection"
+                    label="Custom Cluster"
+                    value={collectionId}
+                    onChange={(e) => setCollectionId(e.target.value)}
+                    theme={theme}
+                >
+                    <option value="">No custom cluster</option>
+                    {collections.map((collection) => (
+                        <option key={collection?._id} value={collection?._id}>
+                            {collection?.name}
+                        </option>
+                    ))}
+                </SelectInput>
 
                 {/* Submit */}
                 <div className="pt-6">

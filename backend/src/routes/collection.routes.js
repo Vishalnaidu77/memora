@@ -1,16 +1,17 @@
 import express from 'express'
 import { createCollectionController, deleteCollectionController, getCollectionController, getSingleCollectionController, updateCollectionController } from '../controllers/collection.controller.js';
+import { identifyUser } from '../middleware/auth.middleware.js'
 
 const collectionRouter = express.Router()
 
-collectionRouter.post("/create", createCollectionController)
+collectionRouter.post("/create", identifyUser, createCollectionController)
 
-collectionRouter.get("/", getCollectionController)
+collectionRouter.get("/", identifyUser, getCollectionController)
 
-collectionRouter.get("/:collectionid", getSingleCollectionController)
+collectionRouter.get("/:collectionId", identifyUser, getSingleCollectionController)
 
-collectionRouter.patch("/:collectionid", updateCollectionController)
+collectionRouter.patch("/:collectionId", identifyUser, updateCollectionController)
 
-collectionRouter.delete("/:collectionid", deleteCollectionController)
+collectionRouter.delete("/:collectionId", identifyUser, deleteCollectionController)
 
 export default collectionRouter;

@@ -5,7 +5,7 @@ const api = axios.create({
     withCredentials: true
 })
 
-export async function saveItem(url, file){
+export async function saveItem(url, file, collectionId){
 
     const formData = new FormData()
     if (url) {
@@ -15,6 +15,10 @@ export async function saveItem(url, file){
     if (file) {
         formData.append("file", file)
         formData.append("title", file.name || "Uploaded file")
+    }
+
+    if (collectionId) {
+        formData.append("collectionId", collectionId)
     }
 
     const res = await api.post("/save", formData)
@@ -36,6 +40,11 @@ export async function getClusters() {
     return res.data
 }
 
+export async function getClusterById(clusterId) {
+    const res = await api.get(`/clusters/${clusterId}`)
+    return res.data
+}
+
 export async function generateClusters() {
     const res = await api.post("/cluster-topics")
     return res.data
@@ -43,6 +52,11 @@ export async function generateClusters() {
 
 export async function deleteItem(itemId) {
     const res = await api.delete(`/delete/${itemId}`)
+    return res.data
+}
+
+export async function updateItem(itemId, payload) {
+    const res = await api.patch(`/update/${itemId}`, payload)
     return res.data
 }
 

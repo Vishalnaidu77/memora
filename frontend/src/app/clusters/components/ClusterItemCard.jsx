@@ -32,7 +32,7 @@ function HoverActions({ item, isVisible, onOpenItem, onDelete, theme }) {
           className="text-[10px] bg-white text-black tracking-[0.18em]"
           onClick={onOpenItem}
         >
-          CHECK ITEM
+          Check item
         </Button>
 
         {externalUrl ? (
@@ -42,7 +42,7 @@ function HoverActions({ item, isVisible, onOpenItem, onDelete, theme }) {
             className="text-[10px] bg-white text-black tracking-[0.18em]"
             onClick={() => window.open(externalUrl, "_blank", "noopener,noreferrer")}
           >
-            ITEM SOURCE
+            Item source
           </Button>
         ) : null}
       </div>
@@ -94,10 +94,10 @@ function ClusterArtwork({ index, badge, theme, item, isHover, onOpenItem, onDele
   );
 }
 
-export default function ClusterItemCard({ item, index }) {
+export default function ClusterItemCard({ item, index, onDeleted }) {
   const { theme } = useTheme();
   const router = useRouter();
-  const { handleDeleteItem, handleGetClusters, handleGetItems } = useItem();
+  const { handleDeleteItem, handleGetClusters, handleGetCollections, handleGetItems } = useItem();
   const [isHover, setIsHover] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -116,9 +116,10 @@ export default function ClusterItemCard({ item, index }) {
     setIsDeleting(true);
 
     try {
-      await handleDeleteItem(itemId);
+      const deletedItem = await handleDeleteItem(itemId);
       setShowDeleteModal(false);
-      await Promise.allSettled([handleGetClusters(), handleGetItems()]);
+      await Promise.allSettled([handleGetClusters(), handleGetCollections(), handleGetItems()]);
+      onDeleted?.(deletedItem || item);
     } finally {
       setIsDeleting(false);
     }

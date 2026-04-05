@@ -31,7 +31,7 @@ function DetailRow({ label, value, theme }) {
 export default function Page({ params }) {
   const { theme } = useTheme();
   const router = useRouter();
-  const { allItems, handleDeleteItem, handleGetClusters, handleGetItems, loading } = useItem();
+  const { allItems, handleDeleteItem, handleGetClusters, handleGetCollections, handleGetItems, loading } = useItem();
   const [deleteModal, setDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { id } = use(params);
@@ -67,7 +67,7 @@ export default function Page({ params }) {
 
     try {
       await handleDeleteItem(item._id);
-      await Promise.allSettled([handleGetItems(), handleGetClusters()]);
+      await Promise.allSettled([handleGetItems(), handleGetClusters(), handleGetCollections()]);
       setDeleteModal(false);
       router.push("/clusters");
     } finally {

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { FiMoon, FiSun } from "react-icons/fi";
 import { useTheme } from "../ThemeContext";
 import useAuth from "../hooks/useAuth";
+import Button from "./Button";
 
 const navItems = [
   { href: "/", label: "Home"},
@@ -87,6 +88,9 @@ export default function Navbar() {
             })}
           </div>
 
+          <Button theme={theme} variant="auth" className="px-8 py-4 text-[11px] tracking-[0.24em]" onClick={() => setAddItemToggle(true)}>
+            Add Items
+          </Button>
           <button
             type="button"
             aria-label="Toggle theme"
