@@ -5,14 +5,11 @@ import { useTheme } from "../ThemeContext";
 import DashboardHero from "./components/DashboardHero";
 import ItemCard from "./components/ItemCard";
 import useItem from "../hooks/useItem";
-import FormContainer from "./components/FormContainer";
 
 export default function DashboardPage() {
   const { theme } = useTheme();
   const { allItems, handleGetCollections, handleGetItems, loading } = useItem();
   const [filter, setFilter] = useState("ALL OBJECTS");
-  const [ addItemToggle, setAddItemToggle ] = useState(false)
-  const [toast, setToast] = useState(null)
   const initialLoadRef = useRef(false)
 
   useEffect(() => {
@@ -27,16 +24,6 @@ export default function DashboardPage() {
      renderItems()
   }, [handleGetCollections, handleGetItems]);
 
-  useEffect(() => {
-    if (!toast) return;
-
-    const timeoutId = window.setTimeout(() => {
-      setToast(null);
-    }, 3200);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [toast]);
-
   const items = useMemo(() => allItems.filter(Boolean), [allItems]);
 
   const filteredItems = useMemo(() => {
@@ -49,20 +36,6 @@ export default function DashboardPage() {
     });
   }, [filter, items]);
 
-  const featuredItem = filteredItems[0];
-  const synthesisCount = filteredItems.length;
-
-  const handleSaveResult = (result) => {
-    if (!result?.duplicate) return;
-
-    setToast({
-      title: result?.message?.includes("assigned to custom cluster") ? "Assigned to cluster" : "Already saved",
-      message: result?.message?.includes("assigned to custom cluster")
-        ? "The existing item was linked to your selected custom cluster."
-        : "This item is already in your library.",
-    });
-  };
-
   return (
     <main
       className="min-h-[calc(100vh-81px)]"
@@ -72,39 +45,7 @@ export default function DashboardPage() {
         <DashboardHero
           filter={filter}
           setFilter={setFilter}
-          featuredItem={featuredItem}
-          synthesisCount={synthesisCount}
-          setAddItemToggle={setAddItemToggle}
         />
-
-        {toast ? (
-          <div
-            className="fixed right-6 top-60 z-50 w-[min(92vw,360px)] border px-4 py-3"
-            style={{
-              backgroundColor: theme.panelOuter,
-              color: theme.foreground,
-              borderColor: theme.lowBorder,
-              boxShadow: `0 24px 80px ${theme.shadow}`,
-            }}
-          >
-            <p
-              className="text-[11px] tracking-[0.28em]"
-              style={{ color: theme.muted }}
-            >
-              {toast.title}
-            </p>
-            <p className="mt-2 text-sm leading-6" style={{ color: theme.hint }}>
-              {toast.message}
-            </p>
-          </div>
-        ) : null}
-
-        {addItemToggle && (
-          <FormContainer
-            setAddItemToggle={setAddItemToggle}
-            onSaveResult={handleSaveResult}
-          />
-        )}
         <div className="mt-20">
           {loading ? (
             <div className="py-24 text-[11px] tracking-[0.35em]" style={{ color: theme.muted }}>LOADING LIBRARY...</div>

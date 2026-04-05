@@ -20,6 +20,8 @@ const useItem = () => {
         setClusterGroups, 
         collections,
         setCollections,
+        isAddItemModalOpen,
+        setIsAddItemModalOpen,
         graph, 
         setGraph
     } = useContext(ItemContext)
@@ -178,6 +180,14 @@ const useItem = () => {
         }
     }, [setGraph, setLoading])
 
+    const openAddItemModal = useCallback(() => {
+        setIsAddItemModalOpen(true)
+    }, [setIsAddItemModalOpen])
+
+    const closeAddItemModal = useCallback(() => {
+        setIsAddItemModalOpen(false)
+    }, [setIsAddItemModalOpen])
+
     return {
         items,
         loading,
@@ -199,6 +209,9 @@ const useItem = () => {
         handleGenerateClusters,
         handleDeleteItem,
         handleUpdateItem,
+        isAddItemModalOpen,
+        openAddItemModal,
+        closeAddItemModal,
         graph,
         handleKnowledgeGraph
     }

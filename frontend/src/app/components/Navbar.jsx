@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 import { FiMoon, FiSun } from "react-icons/fi";
 import { useTheme } from "../ThemeContext";
 import useAuth from "../hooks/useAuth";
+import useItem from "../hooks/useItem";
 import Button from "./Button";
+import FormContainer from "../library/components/FormContainer";
 
 const navItems = [
   { href: "/", label: "Home"},
@@ -23,6 +25,7 @@ const authItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const { mode, theme, toggleTheme } = useTheme();
+  const { isAddItemModalOpen, openAddItemModal, closeAddItemModal } = useItem();
 
   const { user } = useAuth()
 
@@ -31,7 +34,7 @@ export default function Navbar() {
     : navItems.filter((item) => item.href === "/");
 
   return (
-    
+    <>
       <nav className="mx-auto flex max-w-[1600px] items-center justify-between gap-6 px-6 py-5 md:px-8">
         <div className="flex items-center gap-8 md:gap-12">
           <Link
@@ -88,9 +91,16 @@ export default function Navbar() {
             })}
           </div>
 
-          <Button theme={theme} variant="auth" className="px-8 py-4 text-[11px] tracking-[0.24em]" onClick={() => setAddItemToggle(true)}>
-            Add Items
-          </Button>
+          {user ? (
+            <Button
+              theme={theme}
+              variant="primary"
+              className="px-6 py-2 text-[11px] tracking-[0.24em]"
+              onClick={openAddItemModal}
+            >
+              Add Items
+            </Button>
+          ) : null}
           <button
             type="button"
             aria-label="Toggle theme"
@@ -106,5 +116,9 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
+      {isAddItemModalOpen ? (
+        <FormContainer onClose={closeAddItemModal} />
+      ) : null}
+    </>
   );
 }

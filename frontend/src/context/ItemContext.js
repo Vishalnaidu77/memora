@@ -11,6 +11,7 @@ const ItemProvider = ({ children }) => {
     const [resurfaceItems, setResurfaceItems] = useState([])
     const [clusterGroups, setClusterGroups] = useState([])
     const [collections, setCollections] = useState([])
+    const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false)
     const [ graph, setGraph ] = useState(null)
 
     return(
@@ -27,6 +28,8 @@ const ItemProvider = ({ children }) => {
             setClusterGroups,
             collections,
             setCollections,
+            isAddItemModalOpen,
+            setIsAddItemModalOpen,
             graph,
             setGraph
         }}>

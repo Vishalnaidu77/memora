@@ -4,18 +4,31 @@ import Button from '../../components/Button';
 import SelectInput from '../../components/SelectInput';
 import { useTheme } from '../../ThemeContext';
 import TextInput from '../../components/TextInput'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import useItem from '../../hooks/useItem';
 import { IoClose } from "react-icons/io5";
 
-const FormContainer = ({ setAddItemToggle, onSaveResult }) => {
+const FormContainer = ({ onClose, onSaveResult }) => {
 
     const [ url, setUrl] = useState("")
     const [ file, setFile ] = useState(null)
     const [ collectionId, setCollectionId ] = useState("")
+    const initialCollectionsLoadRef = useRef(false)
 
     const { theme } = useTheme();
     const { collections, loading, handleGetCollections, handleGetItems, handleSaveItem } = useItem()
+
+    useEffect(() => {
+        if (initialCollectionsLoadRef.current) return
+
+        initialCollectionsLoadRef.current = true
+
+        if (!collections?.length) {
+            handleGetCollections().catch((error) => {
+                console.error("Failed to load custom clusters for add item modal", error)
+            })
+        }
+    }, [collections?.length, handleGetCollections])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -26,7 +39,7 @@ const FormContainer = ({ setAddItemToggle, onSaveResult }) => {
         setUrl("")
         setFile(null)
         setCollectionId("")
-        setAddItemToggle(false)
+        onClose?.()
     }
 
   return (
@@ -50,7 +63,7 @@ const FormContainer = ({ setAddItemToggle, onSaveResult }) => {
                 backdropFilter: "blur(10px)",
             }}
             >
-            <span className='absolute right-5 top-5 cursor-pointer' onClick={() => setAddItemToggle(false)}>
+            <span className='absolute right-5 top-5 cursor-pointer' onClick={onClose}>
                 <IoClose 
                     style={{ height: "25px", width: "25px"}}
                 />

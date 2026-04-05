@@ -1,14 +1,9 @@
-import Button from "../../components/Button";
 import { useTheme } from "../../ThemeContext";
 import { FILTERS } from "../constants";
-import { getDisplayTitle } from "../utils";
 
 export default function DashboardHero({
   filter,
-  setFilter,
-  featuredItem,
-  synthesisCount,
-  setAddItemToggle
+  setFilter
 }) {
 
   const { theme } = useTheme();
