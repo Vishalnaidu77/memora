@@ -9,7 +9,7 @@ import { MdDeleteOutline } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import ItemHighlightsSection from "../../../components/ItemHighlightsSection";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
-import SelectInput from "../../../components/SelectInput";
+import CustomSelect from "../../../components/CustomSelect";
 import Button from "../../../components/Button";
 
 function DetailRow({ label, value, theme }) {
@@ -55,18 +55,14 @@ export default function Page({ params }) {
 
     initialLoadRef.current = true;
 
-    if (!allItems?.length) {
-      handleGetItems().catch((error) => {
-        console.error("Failed to load library items", error);
-      });
-    }
+    handleGetItems().catch((error) => {
+      console.error("Failed to load library items", error);
+    });
 
-    if (!collections?.length) {
-      handleGetCollections().catch((error) => {
-        console.error("Failed to load custom clusters", error);
-      });
-    }
-  }, [allItems?.length, collections?.length, handleGetCollections, handleGetItems]);
+    handleGetCollections().catch((error) => {
+      console.error("Failed to load custom clusters", error);
+    });
+  }, [handleGetCollections, handleGetItems]);
 
   const item = useMemo(() => {
     return allItems.find((entry) => String(entry?._id || entry?.id) === String(id));
@@ -271,8 +267,8 @@ export default function Page({ params }) {
                 <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
                   Custom Cluster
                 </p>
-                <div>
-                  <SelectInput
+                <div className="mt-3">
+                  <CustomSelect
                     id="item-collection"
                     value={selectedCollectionId}
                     onChange={(event) => {
@@ -287,7 +283,7 @@ export default function Page({ params }) {
                         {collection?.name}
                       </option>
                     ))}
-                  </SelectInput>
+                  </CustomSelect>
 
                   <div className="mt-4">
                     <Button

@@ -1,7 +1,7 @@
 'use client'
 
 import Button from '../../components/Button';
-import SelectInput from '../../components/SelectInput';
+import CustomSelect from '../../components/CustomSelect';
 import { useTheme } from '../../ThemeContext';
 import TextInput from '../../components/TextInput'
 import React, { useEffect, useRef, useState } from 'react'
@@ -23,12 +23,10 @@ const FormContainer = ({ onClose, onSaveResult }) => {
 
         initialCollectionsLoadRef.current = true
 
-        if (!collections?.length) {
-            handleGetCollections().catch((error) => {
-                console.error("Failed to load custom clusters for add item modal", error)
-            })
-        }
-    }, [collections?.length, handleGetCollections])
+        handleGetCollections().catch((error) => {
+            console.error("Failed to load custom clusters for add item modal", error)
+        })
+    }, [handleGetCollections])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -108,7 +106,7 @@ const FormContainer = ({ onClose, onSaveResult }) => {
                     placeholder="Enter url"
                     theme={theme}   
                     />
-                <SelectInput
+                <CustomSelect
                     id="collection"
                     label="Custom Cluster"
                     value={collectionId}
@@ -121,7 +119,7 @@ const FormContainer = ({ onClose, onSaveResult }) => {
                             {collection?.name}
                         </option>
                     ))}
-                </SelectInput>
+                </CustomSelect>
 
                 {/* Submit */}
                 <div className="pt-6">

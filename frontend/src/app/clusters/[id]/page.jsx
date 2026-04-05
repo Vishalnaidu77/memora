@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link";
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { MdDeleteOutline } from "react-icons/md";
 import DeleteConfirmModal from "../../components/DeleteConfirmModal";
@@ -9,6 +9,8 @@ import ItemHighlightsSection from "../../components/ItemHighlightsSection";
 import { useTheme } from "../../ThemeContext";
 import useItem from "../../hooks/useItem";
 import { getBadge, getMeta, getRelativeSavedLabel } from "../../library/utils";
+import CustomSelect from "../../components/CustomSelect";
+import Button from "../../components/Button";
 
 function DetailRow({ label, value, theme }) {
   if (!value) return null;
@@ -31,22 +33,38 @@ function DetailRow({ label, value, theme }) {
 export default function Page({ params }) {
   const { theme } = useTheme();
   const router = useRouter();
-  const { allItems, handleDeleteItem, handleGetClusters, handleGetCollections, handleGetItems, loading } = useItem();
+  const { allItems, collections, handleDeleteItem, handleGetClusters, handleGetCollections, handleGetItems, handleUpdateItem, loading } = useItem();
   const [deleteModal, setDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedCollectionId, setSelectedCollectionId] = useState("");
+  const [isSavingCluster, setIsSavingCluster] = useState(false);
+  const [clusterNotice, setClusterNotice] = useState("");
+  const initialLoadRef = useRef(false);
   const { id } = use(params);
 
   useEffect(() => {
-    if (!allItems?.length) {
-      handleGetItems().catch((error) => {
-        console.error("Failed to load cluster item details", error);
-      });
-    }
-  }, [allItems?.length, handleGetItems]);
+    if (initialLoadRef.current) return;
+
+    initialLoadRef.current = true;
+
+    handleGetItems().catch((error) => {
+      console.error("Failed to load cluster item details", error);
+    });
+
+    handleGetCollections().catch((error) => {
+      console.error("Failed to load custom clusters", error);
+    });
+  }, [handleGetCollections, handleGetItems]);
 
   const item = useMemo(() => {
     return allItems.find((entry) => String(entry?._id || entry?.id) === String(id));
   }, [allItems, id]);
+
+  const currentCollectionId = item?.collectionId?._id || item?.collectionId || "";
+
+  useEffect(() => {
+    setSelectedCollectionId(currentCollectionId ? String(currentCollectionId) : "");
+  }, [currentCollectionId]);
 
   const imageSrc = item?.image || item?.thumbnail || item?.file?.fileUrl;
   const itemType = item?.contentType || item?.type;
@@ -59,6 +77,27 @@ export default function Page({ params }) {
     item?.content ||
     item?.notes ||
     "";
+
+  const handleCollectionUpdate = async () => {
+    if (!item?._id) return;
+
+    setIsSavingCluster(true);
+
+    try {
+      await handleUpdateItem(item._id, {
+        collectionId: selectedCollectionId || null,
+      });
+
+      setClusterNotice(
+        selectedCollectionId
+          ? "Custom cluster updated."
+          : "Item removed from its custom cluster."
+      );
+      await handleGetCollections();
+    } finally {
+      setIsSavingCluster(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!item?._id) return;
@@ -214,6 +253,51 @@ export default function Page({ params }) {
               <DetailRow label="Read Time" value={item?.readTime} theme={theme} />
               <DetailRow label="Duration" value={item?.duration} theme={theme} />
               <DetailRow label="Pages" value={item?.pages} theme={theme} />
+
+              <div
+                className="border-t py-5 md:grid md:grid-cols-[160px,1fr] md:items-start"
+                style={{ borderColor: theme.lowBorder }}
+              >
+                <p className="text-[11px] tracking-[0.28em]" style={{ color: theme.muted }}>
+                  Custom Cluster
+                </p>
+                <div className="mt-3">
+                  <CustomSelect
+                    id="item-collection"
+                    value={selectedCollectionId}
+                    onChange={(event) => {
+                      setSelectedCollectionId(event.target.value);
+                      setClusterNotice("");
+                    }}
+                    theme={theme}
+                  >
+                    <option value="">No custom cluster</option>
+                    {collections.map((collection) => (
+                      <option key={collection?._id} value={collection?._id}>
+                        {collection?.name}
+                      </option>
+                    ))}
+                  </CustomSelect>
+
+                  <div className="mt-4">
+                    <Button
+                      theme={theme}
+                      variant="secondary"
+                      className="text-[11px] tracking-[0.22em]"
+                      onClick={handleCollectionUpdate}
+                      disabled={isSavingCluster}
+                    >
+                      {isSavingCluster ? "Saving..." : "Save Cluster"}
+                    </Button>
+                  </div>
+
+                  {clusterNotice ? (
+                    <p className="mt-3 text-sm" style={{ color: theme.hint }}>
+                      {clusterNotice}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
 
               {externalUrl ? (
                 <div
