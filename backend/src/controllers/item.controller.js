@@ -119,7 +119,7 @@ export async function saveItemController(req, res) {
             url: url || null,
             title: finalTitle,
             description: finalDescription,
-            image: meta.image || fileData?.fileUrl || '',
+            image: meta.image || fileData?.fileUrl || (isDirectImageUrl(url) ? url : ''),
             siteName: meta.siteName || '',
             content: finalContent,
             contentType: resolvedContentType,
@@ -153,6 +153,17 @@ function resolveContentType(mimeType) {
     if (mimeType.startsWith('image/')) return 'image'
     if (mimeType.startsWith('video/')) return 'video'
     return 'file'
+}
+
+function isDirectImageUrl(url) {
+    if (!url) return false
+
+    try {
+        const parsed = new URL(url)
+        return /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(parsed.pathname)
+    } catch {
+        return false
+    }
 }
 
 export async function getItemsController(req, res) {

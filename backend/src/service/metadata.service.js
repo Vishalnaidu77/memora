@@ -2,6 +2,23 @@ import axios from 'axios';
 import * as cheerio from 'cheerio'
 import https from 'https'
 
+function toAbsoluteUrl(baseUrl, candidateUrl) {
+    if (!candidateUrl || typeof candidateUrl !== 'string') {
+        return ''
+    }
+
+    const cleaned = candidateUrl.trim()
+    if (!cleaned) {
+        return ''
+    }
+
+    try {
+        return new URL(cleaned, baseUrl).toString()
+    } catch {
+        return ''
+    }
+}
+
 export async function fetchMatadata(url){
     try {
         if(url.includes('youtube.com/watch')){
@@ -23,11 +40,23 @@ export async function fetchMatadata(url){
         })
 
         const $ = cheerio.load(data)
+        const description =
+            $('meta[property="og:description"]').attr('content') ||
+            $('meta[name="description"]').attr('content') ||
+            ''
+
+        const rawImage =
+            $('meta[property="og:image"]').attr('content') ||
+            $('meta[name="twitter:image"]').attr('content') ||
+            $('link[rel="image_src"]').attr('href') ||
+            ''
+
+        const image = toAbsoluteUrl(url, rawImage)
 
         return {
             title: $('meta[property="og:title"]').attr('content') || $('title').text() || "",
-            description: $('meta[property="og:description"]').attr('content') || $('meta[name="description"]') || "",
-            image: $('meta[property="og:image"]').attr('content') || '',
+            description,
+            image,
             siteName: $('meta[property="og:site_name"]').attr('content') || '',
         }
     } catch (err) {
