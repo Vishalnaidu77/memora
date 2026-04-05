@@ -224,7 +224,7 @@ export default function Home() {
             </h1>
           </div>
 
-          <div data-gsap="hero-copy" className="max-w-md lg:self-start lg:mt-24">
+          <div data-gsap="hero-copy" className="max-w-md lg:self-start lg:mt-16">
             <p
               className="text-base leading-7"
               style={{ color: theme.hint }}

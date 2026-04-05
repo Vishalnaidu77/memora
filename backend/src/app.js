@@ -7,9 +7,12 @@ import cookieParser from 'cookie-parser'
 
 const app = express()
 
-const allowedOrigins = new Set([
-    'http://localhost:3000'
-])
+const configuredOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+
+const allowedOrigins = new Set(configuredOrigins)
 
 app.use(cors({
     credentials: true,
@@ -27,6 +30,10 @@ app.use(cors({
 }))
 app.use(cookieParser())
 app.use(express.json())
+
+app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'ok' })
+})
 
 app.use("/api/item", itemRouter)
 app.use("/api/collections", collectionRouter)
