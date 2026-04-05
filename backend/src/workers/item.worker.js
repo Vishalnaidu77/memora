@@ -4,7 +4,11 @@ import mongoose from "mongoose";
 import { connectToDb } from "../config/database.js";
 import { itemModel } from "../models/item.model.js";
 import { initCollection } from "../service/qdrant.service.js";
-import { itemEnrichmentQueueName, redisConnection } from "../service/queue.service.js";
+import {
+    itemEnrichmentQueueName,
+    redisConnection,
+    startQueueMaintenance
+} from "../service/queue.service.js";
 import { enrichItem } from "../service/item-enrichment.service.js";
 
 async function processEnrichmentJob(job) {
@@ -25,7 +29,7 @@ async function processEnrichmentJob(job) {
         $set: {
             status: "processing",
             processingError: null,
-            lastProcessingAt: new Date(e)
+            lastProcessingAt: new Date()
         },
         $inc: {
             processingAttempts: 1
@@ -63,6 +67,7 @@ async function processEnrichmentJob(job) {
 async function startWorker() {
     await connectToDb();
     await initCollection();
+    await startQueueMaintenance();
 
     const worker = new Worker(itemEnrichmentQueueName, processEnrichmentJob, {
         connection: redisConnection,
