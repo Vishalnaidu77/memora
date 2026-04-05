@@ -100,7 +100,7 @@ export default function Home() {
             {featureCards.map((card) => (
               <article
                 key={card.title}
-                className={`relative overflow-hidden p-8 md:p-12 ${
+                className={`relative overflow-hidden p-8 ${
                   card.wide ? "min-h-[360px]" : "min-h-[360px]"
                 }`}
                 style={{
@@ -116,7 +116,7 @@ export default function Home() {
                 <p className="text-[10px] tracking-[0.32em]" style={{ color: theme.muted }}>
                   {card.eyebrow}
                 </p>
-                <h3 className="mt-6 max-w-[12ch] text-[clamp(2rem,4vw,3.6rem)] font-black uppercase leading-[0.95] tracking-[-0.06em]">
+                <h3 className="mt-6 max-w-[12ch] text-[clamp(1rem,4vw,2.5rem)] font-black uppercase leading-[0.95] tracking-[-0.06em]">
                   {card.title}
                 </h3>
                 <p className="mt-6 max-w-[32ch] text-sm leading-7" style={{ color: theme.hint }}>

@@ -114,6 +114,7 @@ function ensureHighlightUi() {
       .memora-button {
         border: none;
         cursor: pointer;
+        border-radius: 0.2rem;
         padding: 10px 12px;
         font-size: 11px;
         font-weight: 800;

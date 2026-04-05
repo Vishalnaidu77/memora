@@ -239,15 +239,12 @@ const GraphNodes = ({ graph, handleKnowledgeGraph }) => {
               GRAPH FIELD
             </p>
             <h3
-              className="mt-4 max-w-lg text-3xl font-black tracking-tight"
+              className="mt-4 absolute top-[50%] left-[50%] transform translate-[-50%] max-w-lg text-3xl font-black tracking-tight"
               style={{ color: theme.heading, fontFamily: "'Manrope', sans-serif" }}
             >
-              Your knowledge map will appear here as soon as connected items are ready.
+              Loading knowledge graph...
             </h3>
           </div>
-          <p className="max-w-md text-sm" style={{ color: theme.hint }}>
-            Save a few related memories, articles, or files and Memora will render their semantic links in this field.
-          </p>
         </div>
       </div>
     )

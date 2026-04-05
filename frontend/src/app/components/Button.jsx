@@ -12,7 +12,7 @@ export default function Button({
 }) {
   const baseStyle = {
     fontFamily: "'Manrope', sans-serif",
-    borderRadius: "0px",
+    borderRadius: "0.2rem",
     fontWeight: "600",
     transition: "all 200ms ease",
     border: "none",
@@ -25,13 +25,13 @@ export default function Button({
       background: `linear-gradient(135deg, ${theme?.accent} 0%, ${theme?.accentDark} 100%)`,
       color: "#00354a",
       boxShadow: `0 4px 24px ${theme?.shadow || "rgba(255,255,255,0.1)"}`,
-      padding: "0.875rem 1.5rem",
+      padding: "0.875rem 1.5rem"
     },
     secondary: {
       backgroundColor: theme?.panelInner,
       color: theme?.foreground,
       border: `1px solid ${theme?.lowBorder}`,
-      padding: "0.5rem 1rem",
+      padding: "0.5rem 1rem"
     },
     auth: {
       backgroundColor: theme?.foreground,
@@ -41,6 +41,7 @@ export default function Button({
       textTransform: "uppercase",
       fontSize: "0.875rem",
       fontWeight: "700",
+      borderRadius: "0.2rem"
     },
   };
 

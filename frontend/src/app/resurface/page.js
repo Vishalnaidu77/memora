@@ -34,28 +34,6 @@ const ResurfacePage = () => {
               bringing back materials that are at least a few days old and still worth revisiting.
             </p>
           </div>
-
-          <aside
-            className="min-w-0 overflow-hidden p-8 sm:p-10"
-            style={{
-              backgroundColor: theme.panelOuter,
-              color: theme.foreground,
-              border: `1px solid ${theme.lowBorder}`,
-            }}
-          >
-            <p className="text-[11px] tracking-[0.42em]" style={{ color: theme.muted }}>
-              SURFACE SIGNAL
-            </p>
-            <h2 className="mt-6 max-w-[10ch] text-[clamp(2.2rem,3vw,3.35rem)] font-black leading-[1.02] tracking-[-0.06em] break-words">
-              {resurfaceItems.length
-                ? `${resurfaceItems.length} objects are ready to revisit.`
-                : "No archived items are ready to resurface yet."}
-            </h2>
-            <p className="mt-8 max-w-[28ch] text-[1.05rem] leading-8" style={{ color: theme.hint }}>
-              The resurfacing queue prioritizes older saved objects with low revisit counts, helping
-              your archive feel alive instead of forgotten.
-            </p>
-          </aside>
         </div>
 
         <div className="mt-20">

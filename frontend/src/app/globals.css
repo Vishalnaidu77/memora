@@ -46,3 +46,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+button {
+  border-radius: 0.2rem !important;
+}

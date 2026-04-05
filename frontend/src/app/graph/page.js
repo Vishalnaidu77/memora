@@ -41,14 +41,11 @@ const page = () => {
                 KNOWLEDGE GRAPH
               </p>
               <h1
-                className="mt-5 max-w-4xl text-4xl font-black leading-[0.95] tracking-tight md:text-6xl"
+                className="mt-5 max-w-4xl text-4xl font-black leading-[0.95] tracking-tight md:text-5xl"
                 style={{ color: theme.heading, fontFamily: "'Manrope', sans-serif" }}
               >
                 A living field of how your saved ideas connect.
               </h1>
-              <p className="mt-6 max-w-2xl text-sm md:text-base" style={{ color: theme.hint }}>
-                Each node is an item in your archive. Each edge marks a semantic relationship discovered from the embeddings behind your library.
-              </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
