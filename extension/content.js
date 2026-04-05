@@ -4,6 +4,7 @@ const POPUP_MARGIN = 12;
 let highlightUi = null;
 let activeSelection = null;
 let hideToastTimeoutId = null;
+let dismissedSelectionKey = null;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getPageData") {
@@ -188,7 +189,7 @@ function ensureHighlightUi() {
   });
   saveButton.addEventListener("click", handleSaveHighlight);
   dismissButton.addEventListener("click", () => {
-    hidePopup();
+    hidePopup({ dismissSelection: true });
   });
 
   highlightUi = {
@@ -218,6 +219,19 @@ function truncateText(value, limit = 220) {
   }
 
   return `${value.slice(0, limit - 3).trimEnd()}...`;
+}
+
+function getSelectionKey(selectionPayload) {
+  if (!selectionPayload) {
+    return "";
+  }
+
+  return [
+    normalizeWhitespace(selectionPayload.text),
+    normalizeWhitespace(selectionPayload.pageUrl),
+    normalizeWhitespace(selectionPayload.contextBefore),
+    normalizeWhitespace(selectionPayload.contextAfter),
+  ].join("::");
 }
 
 function isEditableNode(node) {
@@ -319,6 +333,7 @@ function showPopup(selectionPayload) {
   const ui = ensureHighlightUi();
 
   activeSelection = selectionPayload;
+  dismissedSelectionKey = null;
   ui.text.textContent = truncateText(normalizeWhitespace(selectionPayload.text));
 
   if (selectionPayload.tooLong) {
@@ -334,8 +349,16 @@ function showPopup(selectionPayload) {
   positionPopup(selectionPayload.rect);
 }
 
-function hidePopup() {
+function hidePopup(options = {}) {
   const ui = ensureHighlightUi();
+  const { dismissSelection = false, clearDismissedSelection = false } = options;
+
+  if (dismissSelection && activeSelection) {
+    dismissedSelectionKey = getSelectionKey(activeSelection);
+  } else if (clearDismissedSelection) {
+    dismissedSelectionKey = null;
+  }
+
   ui.popup.hidden = true;
   activeSelection = null;
 }
@@ -358,6 +381,11 @@ function refreshSelectionPopup() {
     const selectionPayload = getSelectionPayload();
 
     if (!selectionPayload) {
+      hidePopup({ clearDismissedSelection: true });
+      return;
+    }
+
+    if (getSelectionKey(selectionPayload) === dismissedSelectionKey) {
       hidePopup();
       return;
     }
@@ -393,7 +421,7 @@ async function handleSaveHighlight() {
         : "Highlight saved to this item.";
 
       showToast(successMessage, "success");
-      hidePopup();
+      hidePopup({ clearDismissedSelection: true });
       window.getSelection()?.removeAllRanges();
       return;
     }
@@ -430,7 +458,7 @@ document.addEventListener(
       return;
     }
 
-    hidePopup();
+    hidePopup({ dismissSelection: true });
   },
   true
 );
@@ -438,19 +466,19 @@ document.addEventListener(
 document.addEventListener("scroll", () => {
   const ui = ensureHighlightUi();
   if (!ui.popup.hidden) {
-    hidePopup();
+    hidePopup({ dismissSelection: true });
   }
 }, true);
 
 document.addEventListener("selectionchange", () => {
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed) {
-    hidePopup();
+    hidePopup({ clearDismissedSelection: true });
   }
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-    hidePopup();
+    hidePopup({ dismissSelection: true });
   }
 });
