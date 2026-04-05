@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { useTheme } from '../../ThemeContext'
 import { useRouter } from 'next/navigation'
+import SplitText from '../../components/SplitText'
 
 const GraphNodes = ({ graph, handleKnowledgeGraph }) => {
   const { theme } = useTheme()
@@ -13,6 +14,10 @@ const GraphNodes = ({ graph, handleKnowledgeGraph }) => {
   const [size, setSize] = useState({ width: 960, height: 560 })
 
   const router = useRouter()
+
+  const handleAnimationComplete = () => {
+    console.log('All letters have animated!');
+  };
 
   useEffect(() => {
     if (hasFetchedRef.current) return
@@ -238,12 +243,26 @@ const GraphNodes = ({ graph, handleKnowledgeGraph }) => {
             <p className="text-[11px] tracking-[0.4em]" style={{ color: theme.muted }}>
               GRAPH FIELD
             </p>
-            <h3
+            <div
               className="mt-4 absolute top-[50%] left-[50%] transform translate-[-50%] max-w-lg text-3xl font-black tracking-tight"
               style={{ color: theme.heading, fontFamily: "'Manrope', sans-serif" }}
             >
-              Loading knowledge graph...
-            </h3>
+              <SplitText
+                text="Loading knowledge graph..."
+                className="text-2xl font-semibold text-center"
+                delay={50}
+                duration={1.25}
+                ease="power3.out"
+                splitType="chars"
+                from={{ opacity: 0, y: 40 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.1}
+                rootMargin="-100px"
+                textAlign="center"
+                onLetterAnimationComplete={handleAnimationComplete}
+                showCallback
+              />
+            </div>
           </div>
         </div>
       </div>
