@@ -1,7 +1,7 @@
 import axios from "axios"
 
 const api = axios.create({
-    baseURL: "http://localhost:3001/api/collections",
+    baseURL: "https://memora-8xw8.onrender.com/api/collections",
     withCredentials: true
 })
 

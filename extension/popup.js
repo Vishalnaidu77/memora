@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3001/api"
+const API_BASE_URL = "https://memora-8xw8.onrender.com/api"
 
 document.addEventListener("DOMContentLoaded", async () => {
   const emailInput = document.getElementById("email")
