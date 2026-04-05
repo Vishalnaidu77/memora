@@ -7,7 +7,7 @@ import cookieParser from 'cookie-parser'
 
 const app = express()
 
-const configuredOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+const configuredOrigins = (process.env.CORS_ORIGINS || 'https://memora-2nd-brain.vercel.app/')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean)
