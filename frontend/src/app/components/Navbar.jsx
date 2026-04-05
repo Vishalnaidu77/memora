@@ -1,13 +1,14 @@
 'use client'
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FiMoon, FiSun } from "react-icons/fi";
 import { useTheme } from "../ThemeContext";
 import useAuth from "../hooks/useAuth";
 import useItem from "../hooks/useItem";
 import Button from "./Button";
 import FormContainer from "../library/components/FormContainer";
+import { IoLogOutOutline } from "react-icons/io5";
 
 const navItems = [
   { href: "/", label: "Home"},
@@ -23,15 +24,27 @@ const authItems = [
 ];
 
 export default function Navbar() {
+  const router = useRouter();
   const pathname = usePathname();
   const { mode, theme, toggleTheme } = useTheme();
   const { isAddItemModalOpen, openAddItemModal, closeAddItemModal } = useItem();
 
-  const { user } = useAuth()
+  const { user, handleLogout, loading } = useAuth()
 
   const visibleItems = user
     ? navItems
     : navItems.filter((item) => item.href === "/");
+
+  const onLogout = async () => {
+    try {
+      await handleLogout();
+      closeAddItemModal();
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to logout", error);
+    }
+  };
 
   return (
     <>
@@ -97,8 +110,20 @@ export default function Navbar() {
               variant="secondary"
               className="px-6 py-2 text-[11px] tracking-[0.24em]"
               onClick={openAddItemModal}
+              disabled={loading}
             >
               Add Items
+            </Button>
+          ) : null}
+          {user ? (
+            <Button
+              theme={theme}
+              variant="secondary"
+              className="px-6 py-2 text-[15px] tracking-[0.24em] rounded"
+              onClick={onLogout}
+              disabled={loading}
+            >
+              {loading ? "Logging out..." : <IoLogOutOutline />}
             </Button>
           ) : null}
           <button

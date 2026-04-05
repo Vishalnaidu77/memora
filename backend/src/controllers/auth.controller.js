@@ -102,3 +102,15 @@ export async function getMeController(req, res) {
     })
     
 }
+
+export async function logoutController(req, res) {
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax'
+    })
+
+    res.status(200).json({
+        message: "User logged out successfully"
+    })
+}
