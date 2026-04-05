@@ -563,12 +563,9 @@ export async function updateItemsController(req, res) {
 export async function deleteItemsController(req, res) {
     try {
         const itemId = new mongoose.Types.ObjectId(req.params.itemId)
-        const userId = new mongoose.Types.ObjectId(req.user)
-
-        console.log(itemId, userId);
+        const userId = new mongoose.Types.ObjectId(req.user.id)
     
         const item = await itemModel.findOne({ _id: itemId, userId })
-        console.log(item);
 
         if (!item) {
             return res.status(404).json({ message: "Item not found" })
