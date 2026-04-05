@@ -53,8 +53,14 @@ export async function storeVector(itemId, vector, payload, userId){
     }
 }
 
-export async function searchSimilar(vector, userId, limit = 5){
+export async function searchSimilar(vector, userId, options = {}){
     try{
+        const normalizedOptions = typeof options === "number"
+            ? { limit: options }
+            : options
+        const limit = normalizedOptions.limit ?? 5
+        const scoreThreshold = normalizedOptions.scoreThreshold ?? 0.5
+
         const result = await client.search("items", {
             vector: vector,
             filter: {
@@ -65,10 +71,15 @@ export async function searchSimilar(vector, userId, limit = 5){
             },
             limit: limit,
             with_payload: true,
-            score_threshold: 0.5
+            score_threshold: scoreThreshold
         })
 
-        return result.map(r => r.payload.mongoId)
+        return result.map(r => ({
+            mongoId: r.payload.mongoId,
+            score: r.score,
+            title: r.payload.title
+        }))
+        
     } catch(err){
         console.log("Qdrant search failed:", err.message);
         return []

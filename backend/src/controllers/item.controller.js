@@ -16,6 +16,40 @@ import { enqueueItemEnrichment } from "../service/queue.service.js";
 import { scheduleItemEnrichment } from "../service/item-processing.service.js";
 
 const MAX_HIGHLIGHT_LENGTH = 5000
+const SEARCH_SCORE_THRESHOLD = 0.55
+const RELATED_ITEMS_SCORE_THRESHOLD = 0.65
+const GRAPH_CANDIDATE_SCORE_THRESHOLD = 0.56
+const GRAPH_RECIPROCAL_EDGE_SCORE_THRESHOLD = 0.67
+const GRAPH_STRONG_EDGE_SCORE_THRESHOLD = 0.82
+const GRAPH_EDGE_LIMIT = 6
+const GRAPH_STOP_WORDS = new Set([
+    "a",
+    "an",
+    "and",
+    "the",
+    "to",
+    "for",
+    "of",
+    "on",
+    "in",
+    "with",
+    "by",
+    "from",
+    "what",
+    "is",
+    "how",
+    "learn",
+    "guide",
+    "tutorial",
+    "docs",
+    "documentation",
+    "quick",
+    "start",
+    "introduction",
+    "official",
+    "getting",
+    "started"
+])
 
 function normalizeItemUrl(url) {
     if (!url || typeof url !== "string") {
@@ -363,6 +397,98 @@ function isDirectImageUrl(url) {
     }
 }
 
+function tokenizeGraphText(value) {
+    return new Set(
+        String(value || "")
+            .toLowerCase()
+            .split(/[^a-z0-9]+/)
+            .map((token) => token.trim())
+            .filter((token) => token.length > 1 && !GRAPH_STOP_WORDS.has(token))
+    )
+}
+
+function tokenizeGraphUrl(url) {
+    if (!url) {
+        return new Set()
+    }
+
+    try {
+        const parsed = new URL(url)
+        const host = parsed.hostname.replace(/^www\./, "")
+        const path = parsed.pathname || ""
+        return tokenizeGraphText(`${host} ${path}`)
+    } catch {
+        return new Set()
+    }
+}
+
+function buildGraphSignals(item) {
+    const titleTokens = tokenizeGraphText(item.title)
+    const tagTokens = tokenizeGraphText((item.tags || []).join(" "))
+    const siteTokens = tokenizeGraphText(item.siteName)
+    const urlTokens = tokenizeGraphUrl(item.normalizedUrl || item.url)
+
+    return {
+        titleTokens,
+        tagTokens,
+        siteTokens,
+        urlTokens,
+        allTokens: new Set([
+            ...titleTokens,
+            ...tagTokens,
+            ...siteTokens,
+            ...urlTokens
+        ])
+    }
+}
+
+function countTokenOverlap(leftSet, rightSet) {
+    let count = 0
+
+    leftSet.forEach((token) => {
+        if (rightSet.has(token)) {
+            count += 1
+        }
+    })
+
+    return count
+}
+
+function computeGraphLexicalBoost(sourceSignals, targetSignals, sourceItem, targetItem) {
+    if (!sourceSignals || !targetSignals) {
+        return 0
+    }
+
+    const sharedAll = countTokenOverlap(sourceSignals.allTokens, targetSignals.allTokens)
+    const sharedTitle = countTokenOverlap(sourceSignals.titleTokens, targetSignals.titleTokens)
+    const sharedTag = countTokenOverlap(sourceSignals.tagTokens, targetSignals.tagTokens)
+    const sharedSite = countTokenOverlap(sourceSignals.siteTokens, targetSignals.siteTokens)
+    const sharedUrl = countTokenOverlap(sourceSignals.urlTokens, targetSignals.urlTokens)
+
+    let boost = 0
+
+    if (sharedAll >= 1) boost += 0.06
+    if (sharedAll >= 2) boost += 0.05
+    if (sharedTitle >= 1) boost += 0.08
+    if (sharedTag >= 1) boost += 0.05
+    if (sharedSite >= 1 || sharedUrl >= 1) boost += 0.07
+
+    const sourceTitle = String(sourceItem?.title || "").toLowerCase()
+    const targetTitle = String(targetItem?.title || "").toLowerCase()
+    const docLikePattern = /\b(docs?|documentation|guide|quick start|getting started)\b/
+
+    if (
+        docLikePattern.test(sourceTitle)
+        || docLikePattern.test(targetTitle)
+    ) {
+        if (sharedTitle >= 1 || sharedSite >= 1 || sharedUrl >= 1) {
+            boost += 0.05
+        }
+    }
+
+    return Number(Math.min(boost, 0.22).toFixed(4))
+}
+
 export async function getItemsController(req, res) {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.id)
@@ -453,8 +579,12 @@ export async function searchItemsController(req, res) {
             })
         }
 
-        const mongoIds = await searchSimilar(embeddings, userId)
-        console.log("Mongo id", mongoIds);
+        const similarResults = await searchSimilar(embeddings, userId, {
+            limit: 5,
+            scoreThreshold: SEARCH_SCORE_THRESHOLD
+        })
+        const mongoIds = similarResults.map(result => result.mongoId)
+        console.log("Mongo id", similarResults);
 
 
         const items = await itemModel.find({
@@ -490,9 +620,14 @@ export async function relatedItemsController(req, res) {
         const text = `${item.title}. ${item.description}`
         const embeddings = await generateEmbedding(text)
 
-        const mongoIds = await searchSimilar(embeddings, userId)
-        const filteredIds = mongoIds.filter(id => id !== itemId)
-        console.log("mongo ID", mongoIds);
+        const similarResults = await searchSimilar(embeddings, userId, {
+            limit: 5,
+            scoreThreshold: RELATED_ITEMS_SCORE_THRESHOLD
+        })
+        const filteredIds = similarResults
+            .map(result => result.mongoId)
+            .filter(id => id !== itemId)
+        console.log("mongo ID", similarResults);
         
         console.log("Filter",filteredIds);
 
@@ -642,33 +777,88 @@ export async function getGraphDataController(req, res) {
         }))
 
         const nodeIds = new Set(nodes.map(node => node.id))
+        const itemMap = new Map(items.map(item => [item._id.toString(), item]))
+        const signalMap = new Map(
+            items.map(item => [item._id.toString(), buildGraphSignals(item)])
+        )
 
-        const edges = []
+        const similarityMap = new Map()
         for (const item of items){
             const vector = vectorMap[item._id.toString()]
             if (!vector) continue
-              
-            const relatedIds = await searchSimilar(vector, userId, 3)
-  
-            relatedIds.forEach(relatedId => {
-                const sourceId = item._id.toString()
-                const targetId = relatedId.toString()
 
-                if(sourceId !== targetId && nodeIds.has(targetId)){
-  
-                    const exist = edges.find(e => 
-                        (e.source === sourceId && e.target === targetId) ||
-                        (e.source === targetId && e.target === sourceId)
-                    )
-                    if (!exist) {
-                        edges.push({
-                            source: sourceId,
-                            target: targetId
-                        })
-                    }
-                }
-            })   
+            const sourceId = item._id.toString()
+            const relatedResults = await searchSimilar(vector, userId, {
+                limit: GRAPH_EDGE_LIMIT,
+                scoreThreshold: GRAPH_CANDIDATE_SCORE_THRESHOLD
+            })
+
+            similarityMap.set(
+                sourceId,
+                relatedResults
+                    .map((result) => {
+                        const targetId = result.mongoId?.toString()
+
+                        if (!targetId || targetId === sourceId || !nodeIds.has(targetId)) {
+                            return null
+                        }
+
+                        const lexicalBoost = computeGraphLexicalBoost(
+                            signalMap.get(sourceId),
+                            signalMap.get(targetId),
+                            itemMap.get(sourceId),
+                            itemMap.get(targetId)
+                        )
+                        const hybridScore = Number(
+                            Math.min((result.score || 0) + lexicalBoost, 0.99).toFixed(4)
+                        )
+
+                        return {
+                            ...result,
+                            mongoId: targetId,
+                            lexicalBoost,
+                            hybridScore
+                        }
+                    })
+                    .filter(Boolean)
+            )
         }
+
+        const edgeMap = new Map()
+
+        similarityMap.forEach((matches, sourceId) => {
+            matches.forEach((match) => {
+                const targetId = match.mongoId.toString()
+                const reciprocalMatch = similarityMap.get(targetId)?.find(
+                    (candidate) => candidate.mongoId.toString() === sourceId
+                )
+
+                const currentHybridScore = match.hybridScore || 0
+                const reciprocalHybridScore = reciprocalMatch?.hybridScore || 0
+                const isStrongOneWayMatch = currentHybridScore >= GRAPH_STRONG_EDGE_SCORE_THRESHOLD
+                const isReciprocalMatch = Boolean(
+                    reciprocalMatch
+                    && currentHybridScore >= GRAPH_RECIPROCAL_EDGE_SCORE_THRESHOLD
+                    && reciprocalHybridScore >= GRAPH_RECIPROCAL_EDGE_SCORE_THRESHOLD
+                )
+
+                if (!isStrongOneWayMatch && !isReciprocalMatch) {
+                    return
+                }
+
+                const edgeKey = [sourceId, targetId].sort().join(":")
+
+                if (!edgeMap.has(edgeKey)) {
+                    edgeMap.set(edgeKey, {
+                        source: sourceId,
+                        target: targetId,
+                        score: Number(Math.max(currentHybridScore, reciprocalHybridScore).toFixed(4))
+                    })
+                }
+            })
+        })
+
+        const edges = [...edgeMap.values()]
         
         res.status(200).json({
             message: "Fetch similar items",
