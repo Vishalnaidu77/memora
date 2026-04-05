@@ -7,9 +7,15 @@ import cookieParser from 'cookie-parser'
 
 const app = express()
 
-const configuredOrigins = (process.env.CORS_ORIGINS || 'https://memora-2nd-brain.vercel.app/')
+const normalizeOrigin = (value) => value.replace(/\/$/, '')
+
+const configuredOrigins = (
+    process.env.CORS_ORIGINS ||
+    'http://localhost:3000,https://memora-2nd-brain.vercel.app'
+)
     .split(',')
     .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean)
 
 const allowedOrigins = new Set(configuredOrigins)
@@ -21,7 +27,16 @@ app.use(cors({
             return callback(null, true)
         }
 
-        if (allowedOrigins.has(origin) || origin.startsWith('chrome-extension://')) {
+        const normalizedOrigin = normalizeOrigin(origin)
+
+        // Allow local browser extension traffic and Vercel preview/prod domains.
+        const isAllowedVercel = /https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(normalizedOrigin)
+
+        if (
+            allowedOrigins.has(normalizedOrigin) ||
+            normalizedOrigin.startsWith('chrome-extension://') ||
+            isAllowedVercel
+        ) {
             return callback(null, true)
         }
 
