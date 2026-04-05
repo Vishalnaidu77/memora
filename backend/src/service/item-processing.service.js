@@ -8,6 +8,10 @@ function getStaleProcessingDate() {
     return new Date(Date.now() - staleProcessingMs);
 }
 
+function needsSummaryBackfill(item) {
+    return !String(item?.summary || "").trim()
+}
+
 function buildClaimFilter(itemId) {
     const staleDate = getStaleProcessingDate();
 
@@ -16,6 +20,14 @@ function buildClaimFilter(itemId) {
         $or: [
             { status: { $in: ["queued", "failed"] } },
             { status: { $exists: false } },
+            {
+                status: "ready",
+                $or: [
+                    { summary: { $exists: false } },
+                    { summary: null },
+                    { summary: "" }
+                ]
+            },
             {
                 status: "processing",
                 $or: [
@@ -71,7 +83,11 @@ export async function processItemEnrichment(itemId) {
             };
         }
 
-        if (existingItem.status === "ready" && (existingItem.tags?.length || existingItem.chromaId)) {
+        if (
+            existingItem.status === "ready"
+            && (existingItem.tags?.length || existingItem.chromaId)
+            && !needsSummaryBackfill(existingItem)
+        ) {
             return {
                 ok: true,
                 skipped: true,
@@ -90,12 +106,13 @@ export async function processItemEnrichment(itemId) {
         }
 
         try {
-            const { tags, chromaId } = await enrichItem(item);
+            const { tags, chromaId, summary } = await enrichItem(item);
 
             await itemModel.findByIdAndUpdate(itemId, {
                 $set: {
                     tags,
                     chromaId,
+                    summary,
                     status: "ready",
                     processingError: null,
                     lastProcessingAt: new Date()
@@ -146,6 +163,14 @@ export async function resumePendingItemEnrichment(options = {}) {
     const pendingItems = await itemModel.find({
         $or: [
             { status: { $in: ["queued", "failed"] } },
+            {
+                status: "ready",
+                $or: [
+                    { summary: { $exists: false } },
+                    { summary: null },
+                    { summary: "" }
+                ]
+            },
             {
                 status: "processing",
                 $or: [

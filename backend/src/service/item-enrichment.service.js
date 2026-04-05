@@ -1,4 +1,4 @@
-import { generateEmbedding, generateTags } from "./ai.service.js";
+import { generateEmbedding, generateSummary, generateTags } from "./ai.service.js";
 import { storeVector } from "./qdrant.service.js";
 
 const STOP_WORDS = new Set([
@@ -37,6 +37,36 @@ function buildFallbackTags({ title, description, content, contentType }) {
     return fallbackTags;
 }
 
+function trimSummary(value, maxLength = 280) {
+    const normalized = String(value || "").replace(/\s+/g, " ").trim()
+
+    if (!normalized) {
+        return ""
+    }
+
+    if (normalized.length <= maxLength) {
+        return normalized
+    }
+
+    return `${normalized.slice(0, maxLength - 3).trim()}...`
+}
+
+function buildFallbackSummary({ title, description, content, contentType }) {
+    const candidate = [description, content, title]
+        .map((value) => trimSummary(value))
+        .find(Boolean)
+
+    if (candidate) {
+        return candidate
+    }
+
+    if (contentType && contentType !== "other") {
+        return `Saved ${contentType} ready for review.`
+    }
+
+    return "Saved item ready for review."
+}
+
 export async function enrichItem(item) {
     const title = item.title || "";
     const description = item.description || "";
@@ -45,9 +75,10 @@ export async function enrichItem(item) {
     const userId = item.userId.toString();
     const text = [title, description, content].filter(Boolean).join(". ");
 
-    const [tagsRaw, embeddings] = await Promise.all([
+    const [tagsRaw, embeddings, generatedSummary] = await Promise.all([
         generateTags(title, [description, content].filter(Boolean).join(". ")),
-        generateEmbedding(text)
+        generateEmbedding(text),
+        generateSummary(title, description, content, contentType)
     ]);
 
     let tags = Array.isArray(tagsRaw)
@@ -68,6 +99,13 @@ export async function enrichItem(item) {
         });
     }
 
+    const summary = trimSummary(generatedSummary) || buildFallbackSummary({
+        title,
+        description,
+        content,
+        contentType
+    })
+
     let qdrantId = item.chromaId || null;
 
     if (embeddings) {
@@ -77,6 +115,7 @@ export async function enrichItem(item) {
                 embeddings,
                 {
                     userId,
+                    title,
                     tags, 
                     description,
                     contentType
@@ -91,6 +130,7 @@ export async function enrichItem(item) {
 
     return {
         tags,
-        chromaId: qdrantId
+        chromaId: qdrantId,
+        summary
     };
 }

@@ -36,7 +36,13 @@ export default function DashboardPage() {
 
   const filteredItems = useMemo(() => {
     if (filter === "ALL OBJECTS") return items;
-    return items.filter((item) => item?.type === filter);
+    return items.filter((item) => {
+      const itemType = item?.contentType || item?.type;
+      const normalizedItemType = itemType === "twitter" ? "tweet" : itemType;
+      const normalizedFilter = filter === "twitter" ? "tweet" : filter;
+
+      return normalizedItemType === normalizedFilter;
+    });
   }, [filter, items]);
 
   const featuredItem = filteredItems[0];

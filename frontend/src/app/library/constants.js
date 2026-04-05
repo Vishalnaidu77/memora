@@ -2,6 +2,7 @@ export const FILTERS = [
   { label: "ALL OBJECTS", value: "ALL OBJECTS" },
   { label: "ARTICLES", value: "article" },
   { label: "VIDEOS", value: "video" },
+  { label: "IMAGES", value: "image" },
   { label: "TWITTER THREADS", value: "twitter" },
   { label: "PDFS", value: "pdf" },
 ];

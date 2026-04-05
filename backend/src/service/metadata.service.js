@@ -2,6 +2,32 @@ import axios from 'axios';
 import * as cheerio from 'cheerio'
 import https from 'https'
 
+function getYouTubeVideoId(url) {
+    try {
+        const parsed = new URL(url)
+        const host = parsed.hostname.replace(/^www\./, '').toLowerCase()
+
+        if (host === 'youtu.be') {
+            return parsed.pathname.split('/').filter(Boolean)[0] || null
+        }
+
+        if (host === 'youtube.com' || host === 'm.youtube.com') {
+            if (parsed.pathname === '/watch') {
+                return parsed.searchParams.get('v')
+            }
+
+            const segments = parsed.pathname.split('/').filter(Boolean)
+            if (['shorts', 'embed', 'live'].includes(segments[0])) {
+                return segments[1] || null
+            }
+        }
+
+        return null
+    } catch {
+        return null
+    }
+}
+
 function toAbsoluteUrl(baseUrl, candidateUrl) {
     if (!candidateUrl || typeof candidateUrl !== 'string') {
         return ''
@@ -21,12 +47,13 @@ function toAbsoluteUrl(baseUrl, candidateUrl) {
 
 export async function fetchMatadata(url){
     try {
-        if(url.includes('youtube.com/watch')){
-            const videoId = new URL(url).searchParams.get('v')
+        const youtubeVideoId = getYouTubeVideoId(url)
+
+        if(youtubeVideoId){
             return {
                 title: null,
-                discription: null,
-                image: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+                description: null,
+                image: `https://img.youtube.com/vi/${youtubeVideoId}/maxresdefault.jpg`,
                 contentType: 'video'
             }
         }

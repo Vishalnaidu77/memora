@@ -63,6 +63,40 @@ export async function generateEmbedding(text) {
     }
 }
 
+export async function generateSummary(title, description, content, contentType = "other") {
+    let cleanText = ''
+
+    try {
+        const prompt = `
+            You are writing a short library description for a saved item.
+
+            Content type: ${contentType}
+            Title: ${title || "Untitled"}
+            Existing description: ${description || "None"}
+            Extracted content: ${content || "None"}
+
+            Write a concise 1-2 sentence summary.
+            Rules:
+            - Maximum 280 characters
+            - Use plain natural language
+            - Do not mention that this was AI generated
+            - Do not use bullet points
+            - Return only the summary text
+        `
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt
+        })
+
+        cleanText = response.text.trim().replace(/[`"]/g, '')
+        return cleanText || ''
+    } catch (err) {
+        console.error('generateSummary failed:', err.message, 'Raw:', cleanText)
+        return ''
+    }
+}
+
 export async function generateTopicLabel(clusterItems) {
     let cleanText = ''
 

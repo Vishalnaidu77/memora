@@ -65,7 +65,7 @@ function PlaceholderArtwork({ index, badge, theme, item }) {
 
 export default function ItemCard({ item, index }) {
   const { theme } = useTheme();
-  const badge = getBadge(item?.type);
+  const badge = getBadge(item?.contentType || item?.type);
   const imageSrc = item?.image || item?.thumbnail;
   const router = useRouter();
   const [isHover, setIsHover] = useState(false);
@@ -135,7 +135,7 @@ export default function ItemCard({ item, index }) {
       </div>
 
       <h3
-        className="max-w-[13ch] text-[clamp(1.65rem,2vw,2.1rem)] font-black leading-[1.06] tracking-[-0.05em]"
+        className="max-w-[13ch] break-words text-[clamp(1.65rem,2vw,2.1rem)] font-black leading-[1.06] tracking-[-0.05em] [overflow-wrap:anywhere]"
         style={{ color: theme.heading }}
       >
         {getDisplayTitle(item?.title, 54)}

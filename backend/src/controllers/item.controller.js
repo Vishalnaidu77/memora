@@ -212,7 +212,8 @@ export async function saveItemController(req, res) {
         const finalDescription = meta.description || ''
         const finalContent = extractedText || meta.content || ''
         const resolvedContentType = resolveContentType(
-            contentType || uploadedFile?.mimetype
+            contentType || meta.contentType || uploadedFile?.mimetype,
+            { url }
         )
         const contentFingerprint = buildContentFingerprint({
             title: finalTitle,
@@ -375,14 +376,32 @@ export async function addHighlightController(req, res) {
     }
 }
 
-function resolveContentType(mimeType) {
-    if (!mimeType) return 'other'
-    if (['article', 'tweet', 'image', 'video', 'pdf', 'file', 'other'].includes(mimeType)) {
-        return mimeType
+function resolveContentType(mimeType, options = {}) {
+    const normalizedType = typeof mimeType === "string" ? mimeType.toLowerCase() : ""
+    const normalizedUrl = options.url?.toLowerCase?.() || ""
+
+    if (normalizedType === "twitter") return "tweet"
+    if (['article', 'tweet', 'image', 'video', 'pdf', 'file', 'other'].includes(normalizedType)) {
+        return normalizedType
     }
-    if (mimeType === 'application/pdf') return 'pdf'
-    if (mimeType.startsWith('image/')) return 'image'
-    if (mimeType.startsWith('video/')) return 'video'
+    if (normalizedType === 'application/pdf') return 'pdf'
+    if (normalizedType.startsWith('image/')) return 'image'
+    if (normalizedType.startsWith('video/')) return 'video'
+    if (normalizedUrl) {
+        if (/(youtube\.com|youtu\.be|vimeo\.com|loom\.com)/.test(normalizedUrl)) {
+            return 'video'
+        }
+        if (/(twitter\.com|x\.com)/.test(normalizedUrl)) {
+            return 'tweet'
+        }
+        if (/\.(pdf)(\?|#|$)/.test(normalizedUrl)) {
+            return 'pdf'
+        }
+        if (/\.(png|jpe?g|gif|webp|avif|svg)(\?|#|$)/.test(normalizedUrl)) {
+            return 'image'
+        }
+        return 'article'
+    }
     return 'file'
 }
 
@@ -493,6 +512,17 @@ export async function getItemsController(req, res) {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.id)
         const items = await itemModel.find({ userId })
+
+        items
+            .filter((item) => !String(item.summary || "").trim())
+            .slice(0, 10)
+            .forEach((item) => {
+                scheduleItemEnrichment(item._id)
+                enqueueItemEnrichment({ itemId: item._id, userId })
+                    .catch((queueError) => {
+                        console.warn(`Queue enqueue failed for item ${item._id}: ${queueError.message}`)
+                    })
+            })
 
         res.status(200).json({
             message : "Items fetched",
