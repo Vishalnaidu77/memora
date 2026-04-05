@@ -1,94 +1,105 @@
 import "dotenv/config.js";
-import { Worker } from "bullmq";
+import { fileURLToPath } from "url";
 import mongoose from "mongoose";
+import { Worker } from "bullmq";
 import { connectToDb } from "../config/database.js";
-import { itemModel } from "../models/item.model.js";
 import { initCollection } from "../service/qdrant.service.js";
 import {
+    getRedisConnection,
     itemEnrichmentQueueName,
-    redisConnection,
     startQueueMaintenance
 } from "../service/queue.service.js";
-import { enrichItem } from "../service/item-enrichment.service.js";
+import { processItemEnrichment } from "../service/item-processing.service.js";
+
+let workerInstance = null;
+let workerStartupPromise = null;
 
 async function processEnrichmentJob(job) {
     const { itemId } = job.data;
+    const result = await processItemEnrichment(itemId);
 
-    const item = await itemModel.findById(itemId);
-    if (!item) {
-        console.log(`Worker skipped missing item: ${itemId}`);
-        return;
+    if (result?.skipped) {
+        console.log(`Worker skipped item ${itemId}: ${result.reason}`);
+    } else {
+        console.log(`Worker finished item: ${itemId}`);
+    }
+}
+
+export async function startItemWorker(options = {}) {
+    const {
+        ensureInfrastructure = false,
+        logReadyMessage = true
+    } = options;
+
+    if (workerInstance) {
+        return workerInstance;
     }
 
-    if (item.status === "ready" && (item.tags?.length || item.chromaId)) {
-        console.log(`Worker skipped already processed item: ${itemId}`);
-        return;
+    if (workerStartupPromise) {
+        return workerStartupPromise;
     }
 
-    await itemModel.findByIdAndUpdate(itemId, {
-        $set: {
-            status: "processing",
-            processingError: null,
-            lastProcessingAt: new Date()
-        },
-        $inc: {
-            processingAttempts: 1
+    workerStartupPromise = (async () => {
+        if (ensureInfrastructure) {
+            if (mongoose.connection.readyState === 0) {
+                await connectToDb();
+            }
+
+            try {
+                await initCollection();
+            } catch (error) {
+                console.warn(`Qdrant init failed for worker: ${error.message}`);
+            }
         }
-    });
+
+        await startQueueMaintenance();
+
+        const worker = new Worker(itemEnrichmentQueueName, processEnrichmentJob, {
+            connection: getRedisConnection(),
+            concurrency: 1
+        });
+
+        worker.on("completed", job => {
+            console.log(`Job completed: ${job.id}`);
+        });
+
+        worker.on("failed", (job, error) => {
+            console.error(`Job failed: ${job?.id}`, error.message);
+        });
+
+        workerInstance = worker;
+
+        if (logReadyMessage) {
+            console.log("Item worker is running");
+        }
+
+        return worker;
+    })();
 
     try {
-        const { tags, chromaId } = await enrichItem(item);
+        return await workerStartupPromise;
+    } finally {
+        workerStartupPromise = null;
+    }
+}
 
-        await itemModel.findByIdAndUpdate(itemId, {
-            $set: {
-                tags,
-                chromaId,
-                status: "ready",
-                processingError: null,
-                lastProcessingAt: new Date()
-            }
+async function runAsStandaloneWorker() {
+    try {
+        await startItemWorker({
+            ensureInfrastructure: true,
+            logReadyMessage: true
         });
-
-        console.log(`Worker finished item: ${itemId}`);
     } catch (error) {
-        await itemModel.findByIdAndUpdate(itemId, {
-            $set: {
-                status: "failed",
-                processingError: error.message,
-                lastProcessingAt: new Date()
-            }
-        });
-
-        console.error(`Worker failed item ${itemId}:`, error.message);
-        throw error;
+        console.error("Failed to start item worker:", error.message);
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.close();
+        }
+        process.exit(1);
     }
 }
 
-async function startWorker() {
-    await connectToDb();
-    await initCollection();
-    await startQueueMaintenance();
+const currentFilePath = fileURLToPath(import.meta.url);
 
-    const worker = new Worker(itemEnrichmentQueueName, processEnrichmentJob, {
-        connection: redisConnection,
-        concurrency: 1
-    });
-
-    worker.on("completed", job => {
-        console.log(`Job completed: ${job.id}`);
-    });
-
-    worker.on("failed", (job, error) => {
-        console.error(`Job failed: ${job?.id}`, error.message);
-    });
-
-    console.log("Item worker is running");
+if (process.argv[1] === currentFilePath) {
+    runAsStandaloneWorker();
 }
-
-startWorker().catch(error => {
-    console.error("Failed to start item worker:", error.message);
-    if (mongoose.connection.readyState !== 0) {
-        mongoose.connection.close();
-    }
-    process.exit(1);
-});

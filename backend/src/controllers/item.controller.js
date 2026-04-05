@@ -13,6 +13,90 @@ import {
     findExactDuplicate
 } from "../service/duplicate.service.js";
 import { enqueueItemEnrichment } from "../service/queue.service.js";
+import { scheduleItemEnrichment } from "../service/item-processing.service.js";
+
+const MAX_HIGHLIGHT_LENGTH = 5000
+
+function normalizeItemUrl(url) {
+    if (!url || typeof url !== "string") {
+        return null
+    }
+
+    try {
+        const parsed = new URL(url.trim())
+        parsed.hash = ""
+        parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/"
+        return parsed.toString()
+    } catch {
+        return null
+    }
+}
+
+function buildUrlCandidates(url) {
+    const candidates = new Set()
+
+    if (!url || typeof url !== "string") {
+        return []
+    }
+
+    const trimmedUrl = url.trim()
+    if (!trimmedUrl) {
+        return []
+    }
+
+    candidates.add(trimmedUrl)
+
+    const normalizedUrl = normalizeItemUrl(trimmedUrl)
+    if (normalizedUrl) {
+        candidates.add(normalizedUrl)
+
+        try {
+            const parsed = new URL(normalizedUrl)
+
+            if (parsed.pathname !== "/" && parsed.pathname.endsWith("/")) {
+                parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/"
+                candidates.add(parsed.toString())
+            } else if (parsed.pathname !== "/") {
+                parsed.pathname = `${parsed.pathname}/`
+                candidates.add(parsed.toString())
+            }
+        } catch {
+            // Ignore candidate expansion when URL parsing fails.
+        }
+    }
+
+    return [...candidates]
+}
+
+function normalizeHighlightValue(value) {
+    return String(value || "")
+        .replace(/\s+/g, " ")
+        .trim()
+}
+
+function buildHighlightPayload({ text, pageTitle, pageUrl, contextBefore, contextAfter }) {
+    return {
+        text: String(text || "").trim(),
+        pageTitle: String(pageTitle || "").trim(),
+        pageUrl: String(pageUrl || "").trim(),
+        contextBefore: String(contextBefore || "").trim(),
+        contextAfter: String(contextAfter || "").trim()
+    }
+}
+
+function findDuplicateHighlight(item, highlightPayload) {
+    const incomingText = normalizeHighlightValue(highlightPayload.text)
+    const incomingPageUrl = normalizeHighlightValue(highlightPayload.pageUrl)
+    const incomingBefore = normalizeHighlightValue(highlightPayload.contextBefore)
+    const incomingAfter = normalizeHighlightValue(highlightPayload.contextAfter)
+
+    return item.highlights.find((highlight) => {
+        return normalizeHighlightValue(highlight.text) === incomingText
+            && normalizeHighlightValue(highlight.pageUrl) === incomingPageUrl
+            && normalizeHighlightValue(highlight.contextBefore) === incomingBefore
+            && normalizeHighlightValue(highlight.contextAfter) === incomingAfter
+    }) || null
+}
 
 export async function saveItemController(req, res) {
     try {
@@ -20,6 +104,7 @@ export async function saveItemController(req, res) {
         const id = req.user.id 
         const userId = new mongoose.Types.ObjectId(id)
         const uploadedFile = req.file
+        const normalizedUrl = normalizeItemUrl(url)
 
         if (!url && !uploadedFile) {
             return res.status(400).json({ message: "A url or file is required" })
@@ -117,6 +202,7 @@ export async function saveItemController(req, res) {
         const item = await itemModel.create({
             userId,
             url: url || null,
+            normalizedUrl,
             title: finalTitle,
             description: finalDescription,
             image: meta.image || fileData?.fileUrl || (isDirectImageUrl(url) ? url : ''),
@@ -130,10 +216,14 @@ export async function saveItemController(req, res) {
             status: "queued"
         })
 
-        await enqueueItemEnrichment({ itemId: item._id, userId })
+        scheduleItemEnrichment(item._id)
+        enqueueItemEnrichment({ itemId: item._id, userId })
+            .catch((queueError) => {
+                console.warn(`Queue enqueue failed for item ${item._id}: ${queueError.message}`)
+            })
 
         res.status(201).json({
-            message: "Item saved and queued for processing",
+            message: "Item saved and processing started",
             item
         })
     } catch (err) {
@@ -142,6 +232,113 @@ export async function saveItemController(req, res) {
         })
     }
  
+}
+
+export async function addHighlightController(req, res) {
+    try {
+        const userId = new mongoose.Types.ObjectId(req.user.id)
+        const {
+            text,
+            pageTitle,
+            pageUrl,
+            contextBefore,
+            contextAfter
+        } = req.body
+
+        const highlightText = String(text || "").trim()
+
+        if (!pageUrl || typeof pageUrl !== "string") {
+            return res.status(400).json({
+                message: "Page url is required to save a highlight"
+            })
+        }
+
+        if (!highlightText) {
+            return res.status(400).json({
+                message: "Highlight text is required"
+            })
+        }
+
+        if (highlightText.length > MAX_HIGHLIGHT_LENGTH) {
+            return res.status(400).json({
+                message: `Highlight text must be ${MAX_HIGHLIGHT_LENGTH} characters or less`
+            })
+        }
+
+        const lookupConditions = []
+        const urlCandidates = buildUrlCandidates(pageUrl)
+        const normalizedUrl = normalizeItemUrl(pageUrl)
+
+        if (urlCandidates.length) {
+            lookupConditions.push({ url: { $in: urlCandidates } })
+        }
+
+        if (normalizedUrl) {
+            lookupConditions.push({ normalizedUrl })
+        }
+
+        if (!lookupConditions.length) {
+            return res.status(400).json({
+                message: "Invalid page url"
+            })
+        }
+
+        const item = await itemModel.findOne({
+            userId,
+            $or: lookupConditions
+        }).sort({ createdAt: -1 })
+
+        if (!item) {
+            return res.status(404).json({
+                message: "Save this page to Memora before adding highlights"
+            })
+        }
+
+        const highlightPayload = buildHighlightPayload({
+            text: highlightText,
+            pageTitle,
+            pageUrl,
+            contextBefore,
+            contextAfter
+        })
+
+        const duplicateHighlight = findDuplicateHighlight(item, highlightPayload)
+
+        if (duplicateHighlight) {
+            return res.status(200).json({
+                message: "Highlight already saved",
+                duplicate: true,
+                highlight: duplicateHighlight,
+                itemId: item._id
+            })
+        }
+
+        const updatedItem = await itemModel.findByIdAndUpdate(
+            item._id,
+            {
+                $push: {
+                    highlights: {
+                        $each: [highlightPayload],
+                        $position: 0
+                    }
+                }
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        )
+
+        res.status(201).json({
+            message: "Highlight saved successfully",
+            highlight: updatedItem?.highlights?.[0] || highlightPayload,
+            itemId: item._id
+        })
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        })
+    }
 }
 
 function resolveContentType(mimeType) {

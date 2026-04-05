@@ -5,6 +5,7 @@ import { use, useEffect, useMemo } from "react";
 import { useTheme } from "../../../ThemeContext";
 import useItem from "../../../hooks/useItem";
 import { getBadge, getMeta, getRelativeSavedLabel } from "../../../library/utils";
+import ItemHighlightsSection from "../../../components/ItemHighlightsSection";
 
 function DetailRow({ label, value, theme }) {
   if (!value) return null;
@@ -227,6 +228,8 @@ export default function Page({ params }) {
             ) : null}
           </div>
         </div>
+
+        <ItemHighlightsSection item={item} theme={theme} />
       </section>
     </main>
   );

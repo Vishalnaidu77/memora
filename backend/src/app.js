@@ -7,9 +7,23 @@ import cookieParser from 'cookie-parser'
 
 const app = express()
 
+const allowedOrigins = new Set([
+    'http://localhost:3000'
+])
+
 app.use(cors({
     credentials: true,
-    origin: 'http://localhost:3000'
+    origin(origin, callback) {
+        if (!origin) {
+            return callback(null, true)
+        }
+
+        if (allowedOrigins.has(origin) || origin.startsWith('chrome-extension://')) {
+            return callback(null, true)
+        }
+
+        return callback(new Error('Not allowed by CORS'))
+    }
 }))
 app.use(cookieParser())
 app.use(express.json())

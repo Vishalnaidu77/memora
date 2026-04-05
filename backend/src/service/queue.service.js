@@ -16,27 +16,48 @@ const redisConfig = {
     maxRetriesPerRequest: null
 };
 
-export const redisConnection = new Redis(redisConfig);
+let redisConnectionInstance = null;
+let itemEnrichmentQueueInstance = null;
 
-export const itemEnrichmentQueue = new Queue(itemEnrichmentQueueName, {
-    connection: redisConnection,
-    prefix: queuePrefix,
-    defaultJobOptions: {            // Default rules for every job
-        attempts: 3,
-        backoff: {                  // retries wait time before retrying again
-            type: "exponential", 
-            delay: 2000
-        },
-        removeOnComplete: {
-            age: completedAgeSeconds,
-            count: completedMaxCount
-        },
-        removeOnFail: {
-            age: failedAgeSeconds,
-            count: failedMaxCount
+function getQueueOptions() {
+    return {
+        prefix: queuePrefix,
+        defaultJobOptions: {
+            attempts: 3,
+            backoff: {
+                type: "exponential",
+                delay: 2000
+            },
+            removeOnComplete: {
+                age: completedAgeSeconds,
+                count: completedMaxCount
+            },
+            removeOnFail: {
+                age: failedAgeSeconds,
+                count: failedMaxCount
+            }
         }
+    };
+}
+
+export function getRedisConnection() {
+    if (!redisConnectionInstance) {
+        redisConnectionInstance = new Redis(redisConfig);
     }
-});
+
+    return redisConnectionInstance;
+}
+
+export function getItemEnrichmentQueue() {
+    if (!itemEnrichmentQueueInstance) {
+        itemEnrichmentQueueInstance = new Queue(itemEnrichmentQueueName, {
+            connection: getRedisConnection(),
+            ...getQueueOptions()
+        });
+    }
+
+    return itemEnrichmentQueueInstance;
+}
 
 let maintenanceIntervalId = null;
 
@@ -44,6 +65,7 @@ export async function runQueueMaintenance() {
     const completedGraceMs = Number(process.env.BULLMQ_CLEAN_COMPLETED_GRACE_MS || 3600000);
     const failedGraceMs = Number(process.env.BULLMQ_CLEAN_FAILED_GRACE_MS || 86400000);
     const maxCleanBatch = Number(process.env.BULLMQ_CLEAN_BATCH_SIZE || 1000);
+    const itemEnrichmentQueue = getItemEnrichmentQueue();
 
     const [completed, failed] = await Promise.all([
         itemEnrichmentQueue.clean(completedGraceMs, maxCleanBatch, "completed"),
@@ -98,10 +120,14 @@ export async function startQueueMaintenance() {
 }
 
 export async function enqueueItemEnrichment({ itemId, userId }) {
+    const itemEnrichmentQueue = getItemEnrichmentQueue();
+
     return itemEnrichmentQueue.add("enrich-item", {
         itemId: itemId.toString(),
         userId: userId.toString(),
         jobType: "enrich-item",
         requestedAt: Date.now()
+    }, {
+        jobId: itemId.toString()
     });
 }
